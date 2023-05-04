@@ -1,10 +1,8 @@
 import json
 from datetime import datetime
 
-from google_sheets_utils import collect_all_transactions
 
-
-def analyze_portfolio(transactions: list, prices: dict):
+def analyze_portfolio(transactions: list, prices: dict, filter_by_accounts=None):
     today = datetime.now().strftime('%Y-%m-%d')
 
     # Process transactions
@@ -13,6 +11,9 @@ def analyze_portfolio(transactions: list, prices: dict):
     total_invested = 0
     total_withdrawn = 0
     cash_flows = []
+
+    if filter_by_accounts:
+        transactions = [t for t in transactions if t["account"] in filter_by_accounts]
 
     for transaction in transactions:
         date = datetime.strptime(transaction["date"], "%Y-%m-%d")
@@ -66,16 +67,27 @@ def analyze_portfolio(transactions: list, prices: dict):
     print(f"Annualized Yield: {annualized_yield:.2%}")
 
 
+def list_accounts(transactions):
+    accounts = set()
+    for transaction in transactions:
+        accounts.add(transaction["account"])
+    return accounts
+
+
 if __name__ == '__main__':
     # all_sheets = list_sheets()
     # for sheet in all_sheets:
     #     print(sheet)
-    transactions = collect_all_transactions()
+
+    # transactions = collect_all_transactions()
     # with open('all_transactions.json', 'w') as f:
     #     json.dump(transactions, f)
 
-    # with open('all_transactions.json', 'r') as f:
-    #     transactions = json.load(f)
+    with open('all_transactions.json', 'r') as f:
+        transactions = json.load(f)
+
+    # accounts = list_accounts(transactions)
+    # print(accounts)
 
     # for transaction in transactions:
     #     print(transaction)
@@ -87,4 +99,4 @@ if __name__ == '__main__':
     with open('prices.json', 'r') as f:
         prices = json.load(f)
 
-    analyze_portfolio(transactions, prices)
+    analyze_portfolio(transactions, prices, filter_by_accounts=["meytav shuki 111412"])
