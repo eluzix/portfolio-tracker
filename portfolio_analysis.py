@@ -2,11 +2,15 @@ import json
 from datetime import datetime
 
 from alpha_vantage_utils import get_dividends_as_transactions
+from exchange_rates import get_exchange_rates
+from utils import TerminalColors
 
 
 def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
                       filter_by_accounts=None,
-                      dividend_tax_rate=None):
+                      dividend_tax_rate=None,
+                      as_currency=None,
+                      currency_symbol='$'):
     today = datetime.now().strftime('%Y-%m-%d')
 
     # Process transactions
@@ -44,20 +48,21 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
             total_invested += quantity * pps
             avg_pps[symbol] = (avg_pps[symbol] * shares[symbol] + quantity * pps) / (shares[symbol] + quantity)
             shares[symbol] += quantity
-            cash_flows.append((date, -quantity * pps))
+            cash_flows.append((date, quantity * pps))
 
         elif transaction["type"] == "sell":
             total_withdrawn += quantity * pps
             shares[symbol] -= quantity
-            cash_flows.append((date, quantity * pps))
+            cash_flows.append((date, 0 - (quantity * pps)))
 
         elif transaction["type"] == "dividend" and symbol in shares:
             # multiple pps with current number of shares
             if dividend_tax_rate is not None:
                 pps *= (1 - dividend_tax_rate)
 
-            all_dividends[symbol] += pps * shares[symbol]
-            cash_flows.append((date, pps * shares[symbol]))
+            transaction_value = pps * shares[symbol]
+            all_dividends[symbol] += transaction_value
+            cash_flows.append((date, 0 - transaction_value))
 
     # Calculate other metrics
     current_portfolio_value = sum(prices[symbol] * shares[symbol] for symbol in shares)
@@ -75,6 +80,13 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
 
     total_dividends = sum(all_dividends.values())
 
+    exchange_rate = get_exchange_rates([as_currency])[as_currency] if as_currency is not None else 1
+    total_dividends *= exchange_rate
+    portfolio_gain *= exchange_rate
+    current_portfolio_value *= exchange_rate
+    total_invested *= exchange_rate
+    total_withdrawn *= exchange_rate
+
     # Output results
     print("Total shares per symbol:")
     for symbol, value in shares.items():
@@ -82,19 +94,20 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
 
     print("\nAverage purchase price per share (PPS) per symbol:")
     for symbol, value in avg_pps.items():
-        print(f"{symbol}: ${value:.2f}")
+        print(f"{symbol}: {currency_symbol}{value * exchange_rate:.2f}")
 
     print("\nTotal dividends per symbol:")
     for symbol, value in all_dividends.items():
-        print(f"{symbol}: ${value:.2f}")
+        print(f"{symbol}: {currency_symbol}{value * exchange_rate:.2f}")
 
-    print(f"\nCurrent portfolio value: ${current_portfolio_value:,.2f}")
-    print(f"Total money invested: ${total_invested:,.2f}")
-    print(f"Total money withdrawn: ${total_withdrawn:,.2f}")
-    print(f"Total dividends: ${total_dividends:,.2f}")
-    print(f"Portfolio gain: ${portfolio_gain:,.2f}")
-    print(f"Modified Dietz Yield: {modified_dietz_yield:.2%}")
+    print(f"\nCurrent portfolio value: {currency_symbol}{current_portfolio_value:,.2f}")
+    print(f"Total money invested: {currency_symbol}{total_invested:,.2f}")
+    print(f"Total money withdrawn: {currency_symbol}{total_withdrawn:,.2f}")
+    print(f"Total dividends: {TerminalColors.OK_CYAN}{currency_symbol}{total_dividends:,.2f}{TerminalColors.END}")
+    print(f"Portfolio gain: {currency_symbol}{portfolio_gain:,.2f}")
+    print(f"\nSimple Yield: {(portfolio_gain + total_dividends) / current_portfolio_value:.2%}")
     print(f"Annualized Yield: {annualized_yield:.2%}")
+    print(f"Modified Dietz Yield: {TerminalColors.OK_GREEN}{modified_dietz_yield:.2%}{TerminalColors.END}")
 
 
 def list_accounts(transactions):
@@ -125,8 +138,7 @@ if __name__ == '__main__':
     with open('dividends.json', 'r') as f:
         dividends = json.load(f)
 
-
-# accounts = list_accounts(transactions)
+    # accounts = list_accounts(transactions)
     # print(accounts)
 
     # for transaction in transactions:
@@ -139,4 +151,10 @@ if __name__ == '__main__':
     with open('prices.json', 'r') as f:
         prices = json.load(f)
 
-    analyze_portfolio(transactions, prices, dividends=dividends, dividend_tax_rate=0.25)
+    kwargs = {
+        'dividend_tax_rate': 0.25,
+        # 'as_currency': 'ILS',
+        # 'currency_symbol': '₪',
+    }
+
+    analyze_portfolio(transactions, prices, dividends=dividends, **kwargs)
