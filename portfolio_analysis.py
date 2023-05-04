@@ -4,7 +4,9 @@ from datetime import datetime
 from alpha_vantage_utils import get_dividends_as_transactions
 
 
-def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None, filter_by_accounts=None):
+def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
+                      filter_by_accounts=None,
+                      dividend_tax_rate=None):
     today = datetime.now().strftime('%Y-%m-%d')
 
     # Process transactions
@@ -51,6 +53,9 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None, 
 
         elif transaction["type"] == "dividend" and symbol in shares:
             # multiple pps with current number of shares
+            if dividend_tax_rate is not None:
+                pps *= (1 - dividend_tax_rate)
+
             all_dividends[symbol] += pps * shares[symbol]
             cash_flows.append((date, pps * shares[symbol]))
 
@@ -134,4 +139,4 @@ if __name__ == '__main__':
     with open('prices.json', 'r') as f:
         prices = json.load(f)
 
-    analyze_portfolio(transactions, prices, dividends=dividends, filter_by_accounts=["main etf account"])
+    analyze_portfolio(transactions, prices, dividends=dividends, dividend_tax_rate=0.25)

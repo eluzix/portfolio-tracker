@@ -24,5 +24,5 @@ Then run the following command:
 ```zsh
 python portfolio_analysis.py
 ```
-
+You can also pass `dividend_tax_rate` to `analyze_portfolio` to calculate the impact of taxes on your dividends.
 
