@@ -1,8 +1,12 @@
-import json
+import argparse
+import sys
 from datetime import datetime
 
-from alpha_vantage_utils import get_dividends_as_transactions
+from diskcache import Cache
+
+from alpha_vantage_utils import get_dividends_as_transactions, extract_symbols_prices_from_transactions
 from exchange_rates import get_exchange_rates
+from google_sheets_utils import collect_all_transactions, list_sheets
 from utils import TerminalColors
 
 
@@ -118,38 +122,40 @@ def list_accounts(transactions):
 
 
 if __name__ == '__main__':
-    # all_sheets = list_sheets()
-    # for sheet in all_sheets:
-    #     print(sheet)
+    # create the parser object
+    parser = argparse.ArgumentParser()
 
-    # transactions = collect_all_transactions()
-    # with open('all_transactions.json', 'w') as f:
-    #     json.dump(transactions, f)
+    # add the list sheets and clear cache arguments
+    parser.add_argument('--list-sheets', action='store_true', help='List available sheets')
+    parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
 
-    with open('all_transactions.json', 'r') as f:
-        transactions = json.load(f)
+    # parse the command-line arguments
+    args = parser.parse_args()
+    if args.list_sheets:
+        all_sheets = list_sheets()
+        for sheet in all_sheets:
+            print(sheet)
+        sys.exit(0)
 
+    cache = Cache('cache')
+    if args.clear_cache:
+        cache.clear()
+
+    transactions = cache.get('transactions')
+    if not transactions:
+        transactions = collect_all_transactions()
+        cache.set('transactions', transactions, 60 * 60 * 24 * 7)
     symbols = set(t["symbol"] for t in transactions)
-    # first_date = min(t["date"] for t in transactions)
-    # dividends = get_dividends_as_transactions(symbols)
-    # with open('dividends.json', 'w') as f:
-    #     json.dump(dividends, f)
 
-    with open('dividends.json', 'r') as f:
-        dividends = json.load(f)
+    dividends = cache.get('dividends')
+    if not dividends:
+        dividends = get_dividends_as_transactions(symbols)
+        cache.set('dividends', dividends, 60 * 60 * 24 * 7)
 
-    # accounts = list_accounts(transactions)
-    # print(accounts)
-
-    # for transaction in transactions:
-    #     print(transaction)
-
-    # prices = extract_symbols_prices_from_transactions(transactions)
-    # with open('prices.json', 'w') as f:
-    #     json.dump(prices, f)
-
-    with open('prices.json', 'r') as f:
-        prices = json.load(f)
+    prices = cache.get('prices')
+    if not prices:
+        prices = extract_symbols_prices_from_transactions(transactions)
+        cache.set('prices', prices, 60 * 60 * 24 * 7)
 
     kwargs = {
         'dividend_tax_rate': 0.25,
