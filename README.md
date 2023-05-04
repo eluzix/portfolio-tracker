@@ -2,9 +2,7 @@
 
 ## Setup
 ```zsh
-pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client
-pip install alpha_vantage
-pip install openapi
+pip install -r requirements.txt
 ```
 Create a file called `secrets.json` it should include the following keys:
 1. `alpha_vantage_api_key` - your alpha vantage api key
