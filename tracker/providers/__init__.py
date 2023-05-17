@@ -1,12 +1,14 @@
+import typing
+
 import requests
 
 from tracker.config import get_secret
 from tracker.providers import alpha_vantage_utils
 
 
-def extract_symbols_prices_from_transactions(transactions):
+def extract_symbols_prices(symbols: typing.Union[list, set]):
     # Extract unique symbols from transactions
-    unique_symbols = sorted(set(transaction['symbol'] for transaction in transactions))
+    unique_symbols = sorted(set(symbols))
     key = get_secret('marketstack_key')
     url = f'http://api.marketstack.com/v1/eod/latest?access_key={key}&symbols={",".join(unique_symbols)}'
     response = requests.get(url).json()
@@ -25,4 +27,4 @@ def extract_symbols_prices_from_transactions(transactions):
 
 
 if __name__ == '__main__':
-    extract_symbols_prices_from_transactions([{'symbol': 'VT'}])
+    extract_symbols_prices(['VT'])

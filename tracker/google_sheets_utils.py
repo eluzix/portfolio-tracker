@@ -23,8 +23,11 @@ SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 def google_authenticate():
     creds = None
 
-    if os.path.exists('../token.json'):
-        creds = Credentials.from_authorized_user_file('../token.json', SCOPES)
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+    token_path = os.path.join(dir_path, '..', 'token.json')
+
+    if os.path.exists(token_path):
+        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
 
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -38,18 +41,18 @@ def google_authenticate():
             creds = None
 
         if creds is None:
-            flow = InstalledAppFlow.from_client_secrets_file(
-                '../credentials.json', SCOPES)
+            cred_path = os.path.join(dir_path, '..', 'credentials.json')
+            flow = InstalledAppFlow.from_client_secrets_file(cred_path, SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
-        with open('../token.json', 'w') as token:
+        with open(token_path, 'w') as token:
             token.write(creds.to_json())
 
     return creds
 
 
-def list_sheets(spreadsheet_id: str = None, creds: Credentials = None):
+def list_accounts(spreadsheet_id: str = None, creds: Credentials = None):
     if spreadsheet_id is None:
         spreadsheet_id = get_secret('spreadsheet_id')
 
@@ -87,7 +90,7 @@ def collect_all_transactions(spreadsheet_id: str = None, included_sheets: list =
 
     sheets_api = discovery.build('sheets', 'v4', credentials=creds)
     if len(sheet_names) == 0:
-        sheet_names = list_sheets(spreadsheet_id, creds)
+        sheet_names = list_accounts(spreadsheet_id, creds)
 
     # Iterate over all sheets and gather transactions
     all_transactions = []

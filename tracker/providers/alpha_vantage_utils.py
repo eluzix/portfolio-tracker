@@ -1,4 +1,5 @@
 import json
+import typing
 
 import requests
 from alpha_vantage.timeseries import TimeSeries
@@ -29,7 +30,7 @@ def get_symbols_data(symbols):
     return ret
 
 
-def get_dividends_as_transactions(stocks, start_date=None, end_date=None):
+def get_dividends_as_transactions(stocks: typing.Union[list, set], start_date=None, end_date=None):
     api_key = get_secret("alpha_vantage_api_key")
     dividends_dict = {}
     for stock in stocks:
