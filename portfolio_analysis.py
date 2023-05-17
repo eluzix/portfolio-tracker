@@ -4,8 +4,9 @@ from datetime import datetime
 
 from diskcache import Cache
 
-from alpha_vantage_utils import get_dividends_as_transactions, extract_symbols_prices_from_transactions
-from exchange_rates import get_exchange_rates
+from providers import extract_symbols_prices_from_transactions
+from providers.alpha_vantage_utils import get_dividends_as_transactions
+from providers.exchange_rates import get_exchange_rates
 from google_sheets_utils import collect_all_transactions, list_sheets
 from utils import TerminalColors
 
@@ -24,7 +25,8 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
     total_withdrawn = 0
     cash_flows = []
 
-    if filter_by_accounts:
+    if filter_by_accounts is not None and len(filter_by_accounts) > 0:
+        filter_by_accounts = [a.lower() for a in filter_by_accounts]
         transactions = [t for t in transactions if t["account"] in filter_by_accounts]
 
     symbols = set(t["symbol"] for t in transactions)
@@ -32,6 +34,7 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
         first_date = min(t["date"] for t in transactions)
         dividends = get_dividends_as_transactions(symbols, first_date, today)
 
+    prices = {symbol: data['adj_close'] for symbol, data in prices.items()}
     for symbol in dividends:
         if symbol in prices:
             transactions.extend(dividends[symbol])
@@ -92,6 +95,9 @@ def analyze_portfolio(transactions: list, prices: dict, dividends: dict = None,
     total_withdrawn *= exchange_rate
 
     # Output results
+    if filter_by_accounts is not None:
+        print(f"Filtering by accounts: {TerminalColors.color(', '.join(filter_by_accounts), TerminalColors.WARNING)}\n")
+
     print("Total shares per symbol:")
     for symbol, value in shares.items():
         print(f"{symbol}: {value}")
@@ -126,12 +132,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # add the list sheets and clear cache arguments
-    parser.add_argument('--list-sheets', action='store_true', help='List available sheets')
+    parser.add_argument('--list-accounts', action='store_true', help='List available accounts')
+    parser.add_argument("--accounts", nargs='+', help="Provide a list of accounts")
+    parser.add_argument('--reset-prices', action='store_true', help='re-fetch prices')
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
 
     # parse the command-line arguments
     args = parser.parse_args()
-    if args.list_sheets:
+    if args.list_accounts:
         all_sheets = list_sheets()
         for sheet in all_sheets:
             print(sheet)
@@ -140,6 +148,9 @@ if __name__ == '__main__':
     cache = Cache('cache')
     if args.clear_cache:
         cache.clear()
+
+    if args.reset_prices:
+        cache.delete('prices')
 
     transactions = cache.get('transactions')
     if not transactions:
@@ -153,14 +164,17 @@ if __name__ == '__main__':
         cache.set('dividends', dividends, 60 * 60 * 24 * 7)
 
     prices = cache.get('prices')
-    if not prices:
+    if prices is None:
         prices = extract_symbols_prices_from_transactions(transactions)
-        cache.set('prices', prices, 60 * 60 * 24 * 7)
+        cache.set('prices', prices, 60 * 60 * 12)
 
     kwargs = {
         'dividend_tax_rate': 0.25,
         # 'as_currency': 'ILS',
         # 'currency_symbol': '₪',
     }
+
+    if args.accounts:
+        kwargs['filter_by_accounts'] = args.accounts
 
     analyze_portfolio(transactions, prices, dividends=dividends, **kwargs)

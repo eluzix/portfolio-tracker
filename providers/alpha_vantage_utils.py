@@ -9,15 +9,12 @@ from config import get_secret
 # ---- Alpha Vantage ----
 
 
-def extract_symbols_prices_from_transactions(transactions):
-    # Extract unique symbols from transactions
-    unique_symbols = sorted(set(transaction['symbol'] for transaction in transactions))
-
+def get_symbols_data(symbols):
     # Fetch current stock prices and store them in a dictionary
     symbol_prices = {}
     ts = TimeSeries(key=get_secret('alpha_vantage_api_key'), output_format='json')
 
-    for symbol in unique_symbols:
+    for symbol in symbols:
         try:
             data, _ = ts.get_quote_endpoint(symbol=symbol)
             current_price = float(data.get('05. price', None))
