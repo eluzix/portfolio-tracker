@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from diskcache import Cache
+from rich.table import Table
 from rich.traceback import install
 
 from tracker import store
@@ -22,7 +23,6 @@ if __name__ == '__main__':
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
     parser.add_argument("--currency", type=str, default="USD", help="Provide a currency")
     parser.add_argument("--dividend-rate", type=float, default=0.25, help="Provide a dividend tax rate")
-    parser.add_argument('--per-account', action='store_true', help='Analyze each account separately')
 
     # parse the command-line arguments
     args = parser.parse_args()
@@ -54,40 +54,75 @@ if __name__ == '__main__':
         currency_symbol = '₪' if args.currency == 'ILS' else '$'
         kwargs['as_currency'] = args.currency
 
-    if args.per_account:
-        kwargs['per_account'] = True
-
     all_data = analyze_portfolio(transactions, **kwargs)
-    console.print(all_data)
+    # console.print(all_data)
 
-    for account in all_data:
-        data = all_data[account]
-        exchange_rate = data['exchange_rate']
+    totals = all_data.pop('total')
+    exchange_rate = totals['exchange_rate']
 
-        # Output results
-        if filter_by_accounts is not None:
-            console.print(f"Filtering by accounts: {', '.join(filter_by_accounts)}\n")
+    # Output results
+    symbols_table = Table(show_header=True, header_style="bold pale_turquoise1", title="Symbols Summary")
+    symbols_table.add_column("Symbol", style="dim", width=6)
+    symbols_table.add_column("Shares", justify="right")
+    symbols_table.add_column("PPS", justify="right")
+    symbols_table.add_column("Share Value", justify="right")
+    symbols_table.add_column("Dividends", justify="right")
+    symbols_table.add_column("Value", justify="right")
 
-        console.print("Total shares per symbol:")
-        for symbol, value in data['shares'].items():
-            console.print(f"{symbol}: {value}")
+    all_symbols = store.get_all_symbols(transactions)
+    prices = store.load_prices()
+    for symbol in all_symbols:
+        quantity = totals['shares'].get(symbol, 0)
+        avg_pps = totals['avg_pps'].get(symbol, 0)
+        current_value = prices.get(symbol, {'adj_close': avg_pps})['adj_close']
+        symbols_table.add_row(
+            symbol,
+            f"{quantity:,.0f}",
+            f"{currency_symbol}{avg_pps * exchange_rate:,.2f}",
+            f'{currency_symbol}{current_value * exchange_rate:,.2f}',
+            f"{currency_symbol}{totals['all_dividends'].get(symbol, 0) * exchange_rate:,.0f}",
+            f"{currency_symbol}{quantity * current_value * exchange_rate:,.0f}"
+        )
 
-        console.print("\nAverage purchase price per share (PPS) per symbol:")
-        for symbol, value in data['avg_pps'].items():
-            console.print(f"{symbol}: {currency_symbol}{value * exchange_rate:.2f}")
+    info_table = Table(show_header=True, header_style="bold pale_turquoise1", title="Portfolio Analysis")
+    info_table.add_column('Account', style="dim", width=20)
+    info_table.add_column('Total Invested', justify="right")
+    info_table.add_column('Total Withdrawn', justify="right")
+    info_table.add_column('Total Dividends', justify="right")
+    info_table.add_column('Portfolio Gain', justify="right")
+    info_table.add_column('Simple Yield', justify="right")
+    info_table.add_column('Annualized Yield', justify="right")
+    info_table.add_column('Modified Dietz Yield', justify="right", style="bold green_yellow")
 
-        console.print("\nTotal dividends per symbol:")
-        for symbol, value in data['all_dividends'].items():
-            console.print(f"{symbol}: {currency_symbol}{value * exchange_rate:.2f}")
+    last_item = len(all_data) - 1
+    for i, (account, data) in enumerate(all_data.items()):
+        info_table.add_row(
+            account,
+            f"{currency_symbol}{data['total_invested']:,.0f}",
+            f"{currency_symbol}{data['total_withdrawn']:,.0f}",
+            f"{currency_symbol}{data['total_dividends']:,.0f}",
+            f"{currency_symbol}{data['portfolio_gain']:,.0f}",
+            f"{(data['portfolio_gain'] + data['total_dividends']) / data['current_portfolio_value']:.2%}",
+            f"{data['annualized_yield']:.2%}",
+            f"{data['modified_dietz_yield']:.2%}",
+            end_section=i == last_item,
+        )
 
-        console.print(f"\nCurrent portfolio value: {currency_symbol}{data['current_portfolio_value']:,.2f}")
-        console.print(f"Total money invested: {currency_symbol}{data['total_invested']:,.2f}")
-        console.print(f"Total money withdrawn: {currency_symbol}{data['total_withdrawn']:,.2f}")
-        console.print(f"Total dividends: [bold green]{currency_symbol}{data['total_dividends']:,.2f}[/]")
-        console.print(f"Portfolio gain: {currency_symbol}{data['portfolio_gain']:,.2f}")
-        console.print(
-            f"\nSimple Yield: {(data['portfolio_gain'] + data['total_dividends']) / data['current_portfolio_value']:.2%}")
-        console.print(f"Annualized Yield: {data['annualized_yield']:.2%}")
-        console.print(f"Modified Dietz Yield: [bold green]{data['modified_dietz_yield']:.2%}[/]")
+    if last_item > 0:
+        info_table.add_row(
+            'Total',
+            f"{currency_symbol}{totals['total_invested']:,.0f}",
+            f"{currency_symbol}{totals['total_withdrawn']:,.0f}",
+            f"{currency_symbol}{totals['total_dividends']:,.0f}",
+            f"{currency_symbol}{totals['portfolio_gain']:,.0f}",
+            f"{(totals['portfolio_gain'] + totals['total_dividends']) / totals['current_portfolio_value']:.2%}",
+            f"{totals['annualized_yield']:.2%}",
+            f"{totals['modified_dietz_yield']:.2%}",
+            style="bold dark_orange",
+        )
+
+    console.print(symbols_table)
+    console.print('\n')
+    console.print(info_table)
 
     console.print(f'\n:raccoon: [bold purple]All Done![/] :raccoon:')
