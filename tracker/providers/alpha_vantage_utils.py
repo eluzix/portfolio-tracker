@@ -3,7 +3,7 @@ import json
 import requests
 from alpha_vantage.timeseries import TimeSeries
 
-from config import get_secret
+from tracker.config import get_secret
 
 
 # ---- Alpha Vantage ----

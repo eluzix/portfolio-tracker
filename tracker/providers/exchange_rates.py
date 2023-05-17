@@ -1,6 +1,6 @@
 import requests
 
-from config import get_secret
+from tracker.config import get_secret
 
 
 def get_exchange_rates(target_currencies, base_currency="USD"):

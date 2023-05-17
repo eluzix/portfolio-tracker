@@ -1,5 +1,9 @@
 from datetime import datetime
 
+from rich.console import Console
+
+console = Console()
+
 
 class TerminalColors:
     HEADER = '\033[95m'

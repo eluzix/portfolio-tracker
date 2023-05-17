@@ -3,7 +3,7 @@ import json
 
 import openai
 
-from config import get_secret
+from tracker.config import get_secret
 
 
 def get_completion(prompt, model="gpt-3.5-turbo"):
@@ -28,7 +28,7 @@ if __name__ == '__main__':
     # with open('all_transactions.json', 'w') as f:
     #     json.dump(transactions, f)
 
-    with open('all_transactions.json', 'r') as f:
+    with open('../all_transactions.json', 'r') as f:
         transactions = json.load(f)
 
     # for transaction in transactions:
@@ -38,7 +38,7 @@ if __name__ == '__main__':
     # with open('prices.json', 'w') as f:
     #     json.dump(prices, f)
 
-    with open('prices.json', 'r') as f:
+    with open('../prices.json', 'r') as f:
         prices = json.load(f)
 
     # print(prices)

@@ -1,7 +1,7 @@
 import requests
 
-from config import get_secret
-from providers import alpha_vantage_utils
+from tracker.config import get_secret
+from tracker.providers import alpha_vantage_utils
 
 
 def extract_symbols_prices_from_transactions(transactions):

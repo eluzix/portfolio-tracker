@@ -22,7 +22,7 @@ Create a spreadsheet in Google Sheets and for each account you want to track cre
 
 Then run the following command:
 ```zsh
-python portfolio_analysis.py
+python main.py
 ```
 You can also pass `dividend_tax_rate` to `analyze_portfolio` to calculate the impact of taxes on your dividends.
 
