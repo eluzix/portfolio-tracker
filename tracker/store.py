@@ -1,24 +1,11 @@
-import os
 import typing
 
-from diskcache import Cache
-
+from tracker.cache_utils import get_cache
 from tracker.google_sheets_utils import collect_all_transactions
 from tracker.providers import extract_symbols_prices
 from tracker.providers.alpha_vantage_utils import get_dividends_as_transactions
 from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
-
-_cache = None
-
-
-def get_cache():
-    global _cache
-    if _cache is None:
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        _cache = Cache(f'{dir_path}/../cache')
-
-    return _cache
 
 
 def load_transactions(filter_by_accounts: list = None):

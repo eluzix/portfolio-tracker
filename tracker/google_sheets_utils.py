@@ -1,3 +1,4 @@
+import json
 import operator
 import os
 import re
@@ -7,6 +8,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient import discovery
 
+from tracker.cache_utils import get_cache
 from tracker.config import get_secret
 
 
@@ -16,18 +18,16 @@ def sanitize_currency(val):
 
 
 # Set up the API client
-creds_file = '../credentials.json'
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 
 def google_authenticate():
-    creds = None
+    cache = get_cache()
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-    token_path = os.path.join(dir_path, '..', 'token.json')
-
-    if os.path.exists(token_path):
-        creds = Credentials.from_authorized_user_file(token_path, SCOPES)
+    creds = cache.get('google_token')
+    if creds is not None:
+        creds = Credentials.from_authorized_user_info(json.loads(creds), SCOPES)
+        # creds = Credentials.from_authorized_user_file(token_path, SCOPES)
 
     # If there are no (valid) credentials available, let the user log in.
     if not creds or not creds.valid:
@@ -41,13 +41,13 @@ def google_authenticate():
             creds = None
 
         if creds is None:
+            dir_path = os.path.dirname(os.path.realpath(__file__))
             cred_path = os.path.join(dir_path, '..', 'credentials.json')
             flow = InstalledAppFlow.from_client_secrets_file(cred_path, SCOPES)
             creds = flow.run_local_server(port=0)
 
         # Save the credentials for the next run
-        with open(token_path, 'w') as token:
-            token.write(creds.to_json())
+        cache.set('google_token', creds.to_json())
 
     return creds
 

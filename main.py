@@ -1,14 +1,13 @@
 import argparse
 import sys
 
-from diskcache import Cache
 from rich.table import Table
 from rich.traceback import install
 
 from tracker import store
+from tracker.cache_utils import get_cache
 from tracker.google_sheets_utils import list_accounts
 from tracker.portfolio_analysis import analyze_portfolio
-from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
 
 install()
@@ -20,7 +19,9 @@ if __name__ == '__main__':
     # add the list sheets and clear cache arguments
     parser.add_argument('--list-accounts', action='store_true', help='List available accounts')
     parser.add_argument("--accounts", nargs='+', help="Provide a list of accounts")
+    parser.add_argument("--reload", action='store_true', help="reload transaction list")
     parser.add_argument('--reset-prices', action='store_true', help='re-fetch prices')
+    parser.add_argument('--reset-auth', action='store_true', help='reset google authentication token')
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
     parser.add_argument("--currency", type=str, default="USD", help="Provide a currency")
     parser.add_argument("--dividend-rate", type=float, default=0.25, help="Provide a dividend tax rate")
@@ -33,12 +34,18 @@ if __name__ == '__main__':
             print(sheet)
         sys.exit(0)
 
-    cache = Cache('cache')
+    cache = get_cache()
     if args.clear_cache:
         cache.clear()
 
+    if args.reload:
+        cache.delete('transactions')
+
     if args.reset_prices:
         cache.delete('prices')
+
+    if args.reset_auth:
+        cache.delete('google_token')
 
     filter_by_accounts = None
     if args.accounts:
@@ -53,7 +60,6 @@ if __name__ == '__main__':
     exchange_rate = 1
     currency_symbol = '$'
     currency = args.currency
-    currency = 'ILS'
     if currency != 'USD':
         currency_symbol = '₪' if currency == 'ILS' else '$'
         exchange_rate = store.load_exchange_rates(currency)
