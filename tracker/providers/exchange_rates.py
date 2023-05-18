@@ -3,7 +3,7 @@ import requests
 from tracker.config import get_secret
 
 
-def get_exchange_rates(target_currencies, base_currency="USD"):
+def get_exchange_rates(target_currencies: list, base_currency="USD"):
     url = f"https://api.apilayer.com/exchangerates_data/latest?base={base_currency}&symbols={','.join(target_currencies)}"
     response = requests.get(url, headers={
         'apikey': get_secret('exchangerates_key')

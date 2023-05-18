@@ -8,6 +8,7 @@ from rich.traceback import install
 from tracker import store
 from tracker.google_sheets_utils import list_accounts
 from tracker.portfolio_analysis import analyze_portfolio
+from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
 
 install()
@@ -49,16 +50,19 @@ if __name__ == '__main__':
         'dividend_tax_rate': args.dividend_rate,
     }
 
+    exchange_rate = 1
     currency_symbol = '$'
-    if args.currency != 'USD':
-        currency_symbol = '₪' if args.currency == 'ILS' else '$'
-        kwargs['as_currency'] = args.currency
+    currency = args.currency
+    currency = 'ILS'
+    if currency != 'USD':
+        currency_symbol = '₪' if currency == 'ILS' else '$'
+        exchange_rate = store.load_exchange_rates(currency)
+        console.print(f'\n:moneybag: [bold purple]Exchange Rate: {currency_symbol}{exchange_rate:.2f}[/] :moneybag:')
 
     all_data = analyze_portfolio(transactions, **kwargs)
-    # console.print(all_data)
 
     totals = all_data.pop('total')
-    exchange_rate = totals['exchange_rate']
+    # exchange_rate = totals['exchange_rate']
 
     # Output results
     symbols_table = Table(show_header=True, header_style="bold pale_turquoise1", title="Symbols Summary")
@@ -93,31 +97,34 @@ if __name__ == '__main__':
     info_table.add_column('Simple Yield', justify="right")
     info_table.add_column('Annualized Yield', justify="right")
     info_table.add_column('Modified Dietz Yield', justify="right", style="bold green_yellow")
+    info_table.add_column('Value', justify="right", style="bold yellow")
 
     last_item = len(all_data) - 1
     for i, (account, data) in enumerate(all_data.items()):
         info_table.add_row(
             account,
-            f"{currency_symbol}{data['total_invested']:,.0f}",
-            f"{currency_symbol}{data['total_withdrawn']:,.0f}",
-            f"{currency_symbol}{data['total_dividends']:,.0f}",
-            f"{currency_symbol}{data['portfolio_gain']:,.0f}",
-            f"{(data['portfolio_gain'] + data['total_dividends']) / data['current_portfolio_value']:.2%}",
+            f"{currency_symbol}{data['total_invested'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{data['total_withdrawn'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{data['total_dividends'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{data['portfolio_gain'] * exchange_rate:,.0f}",
+            f"{data['simple_yield']:.2%}",
             f"{data['annualized_yield']:.2%}",
             f"{data['modified_dietz_yield']:.2%}",
+            f"{currency_symbol}{data['current_portfolio_value'] * exchange_rate:,.0f}",
             end_section=i == last_item,
         )
 
     if last_item > 0:
         info_table.add_row(
             'Total',
-            f"{currency_symbol}{totals['total_invested']:,.0f}",
-            f"{currency_symbol}{totals['total_withdrawn']:,.0f}",
-            f"{currency_symbol}{totals['total_dividends']:,.0f}",
-            f"{currency_symbol}{totals['portfolio_gain']:,.0f}",
-            f"{(totals['portfolio_gain'] + totals['total_dividends']) / totals['current_portfolio_value']:.2%}",
+            f"{currency_symbol}{totals['total_invested'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{totals['total_withdrawn'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{totals['total_dividends'] * exchange_rate:,.0f}",
+            f"{currency_symbol}{totals['portfolio_gain'] * exchange_rate:,.0f}",
+            f"{totals['simple_yield']:.2%}",
             f"{totals['annualized_yield']:.2%}",
             f"{totals['modified_dietz_yield']:.2%}",
+            f"{currency_symbol}{totals['current_portfolio_value'] * exchange_rate:,.0f}",
             style="bold dark_orange",
         )
 

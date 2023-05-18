@@ -6,6 +6,7 @@ from diskcache import Cache
 from tracker.google_sheets_utils import collect_all_transactions
 from tracker.providers import extract_symbols_prices
 from tracker.providers.alpha_vantage_utils import get_dividends_as_transactions
+from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
 
 _cache = None
@@ -51,10 +52,11 @@ def load_dividends(symbols: typing.Union[list, set] = None):
     cache = get_cache()
     dividends = cache.get('dividends')
     if not dividends:
-        with console.status("[bold green]Collecting dividends..."):
+        with console.status("[bold green]Collecting dividends...") as status:
             symbols = get_all_symbols()
             dividends = get_dividends_as_transactions(symbols)
             cache.set('dividends', dividends, 60 * 60 * 24 * 7)
+            status.update(f"[bold green]Collected {len(dividends)} dividends[/]")
 
     if symbols is not None:
         dividends = [d for d in dividends if d["symbol"] in symbols]
@@ -66,9 +68,22 @@ def load_prices():
     cache = get_cache()
     prices = cache.get('prices')
     if not prices:
-        with console.status("[bold green]Collecting prices..."):
+        with console.status("[bold green]Collecting prices...") as status:
             symbols = get_all_symbols()
             prices = extract_symbols_prices(symbols)
             cache.set('prices', prices, 60 * 60 * 12)
+            status.update(f"[bold green]Collected {len(prices)} prices[/]")
 
     return prices
+
+
+def load_exchange_rates(currency: str):
+    cache = get_cache()
+    key = f'exchange_rates:{currency}'
+    exchange_rates = cache.get(key)
+    if not exchange_rates:
+        with console.status("[bold green]Collecting exchange rates...") as status:
+            exchange_rates = get_exchange_rates([currency])[currency]
+            cache.set(key, exchange_rates, 60 * 60 * 12)
+
+    return exchange_rates

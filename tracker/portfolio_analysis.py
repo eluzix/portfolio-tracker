@@ -2,14 +2,12 @@ import collections
 from datetime import datetime
 
 from tracker import store
-from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console, today
 
 
 def analyze_account(transactions: list,
                     dividend_tax_rate=None,
-                    load_dividends=True,
-                    as_currency=None):
+                    load_dividends=True):
     now = today()
 
     # Process transactions
@@ -65,7 +63,7 @@ def analyze_account(transactions: list,
 
     # Calculate other metrics
     current_portfolio_value = sum(prices[symbol] * shares[symbol] for symbol in shares)
-    portfolio_gain = current_portfolio_value - total_invested + total_withdrawn
+    portfolio_gain = current_portfolio_value - (total_invested + total_withdrawn)
 
     # Calculate Modified Dietz Yield
     today_date = datetime.strptime(now, "%Y-%m-%d")
@@ -77,17 +75,12 @@ def analyze_account(transactions: list,
     years_since_start = days_since_start / 365
     annualized_yield = ((1 + modified_dietz_yield) ** (1 / years_since_start)) - 1
 
+    # Simple yield
     total_dividends = sum(all_dividends.values())
-
-    exchange_rate = get_exchange_rates([as_currency])[as_currency] if as_currency is not None else 1
-    total_dividends *= exchange_rate
-    portfolio_gain *= exchange_rate
-    current_portfolio_value *= exchange_rate
-    total_invested *= exchange_rate
-    total_withdrawn *= exchange_rate
+    simple_yield = (portfolio_gain + total_dividends) / current_portfolio_value
 
     account_info = {
-        "exchange_rate": exchange_rate,
+        "exchange_rate": 1,
         "shares": shares,
         "avg_pps": avg_pps,
         "total_invested": total_invested,
@@ -98,6 +91,7 @@ def analyze_account(transactions: list,
         "current_portfolio_value": current_portfolio_value,
         "annualized_yield": annualized_yield,
         "modified_dietz_yield": modified_dietz_yield,
+        "simple_yield": simple_yield,
     }
 
     return account_info
@@ -105,24 +99,20 @@ def analyze_account(transactions: list,
 
 def analyze_portfolio(transactions: list,
                       dividend_tax_rate=None,
-                      load_dividends=True,
-                      as_currency=None):
-    with console.status("[bold green]Crunching numbers...") as status:
+                      load_dividends=True):
+    # Group transactions by account
+    transactions_by_account = collections.defaultdict(list)
+    for transaction in transactions:
+        account = transaction.get('account', 'default')
+        transactions_by_account[account].append(transaction)
+        transactions_by_account['total'].append(transaction)
 
-        # Group transactions by account
-        transactions_by_account = collections.defaultdict(list)
-        for transaction in transactions:
-            account = transaction.get('account', 'default')
-            transactions_by_account[account].append(transaction)
-            transactions_by_account['total'].append(transaction)
-
-        # Perform analysis for each account
-        portfolio_summary = {}
-        for account, account_transactions in transactions_by_account.items():
-            portfolio_summary[account] = analyze_account(account_transactions,
-                                                         dividend_tax_rate,
-                                                         load_dividends,
-                                                         as_currency)
+    # Perform analysis for each account
+    portfolio_summary = {}
+    for account, account_transactions in transactions_by_account.items():
+        portfolio_summary[account] = analyze_account(account_transactions,
+                                                     dividend_tax_rate,
+                                                     load_dividends)
 
     return portfolio_summary
 
