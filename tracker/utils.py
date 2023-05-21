@@ -2,7 +2,7 @@ from datetime import datetime
 
 from rich.console import Console
 
-console = Console()
+console = Console(record=True)
 
 
 class TerminalColors:

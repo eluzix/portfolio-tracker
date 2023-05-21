@@ -144,3 +144,4 @@ if __name__ == '__main__':
     console.print(info_table)
 
     console.print(f'\n:raccoon: [bold purple]All Done![/] :raccoon:')
+    console.save_html('portfolio.html')
