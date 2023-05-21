@@ -25,6 +25,7 @@ if __name__ == '__main__':
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
     parser.add_argument("--currency", type=str, default="USD", help="Provide a currency")
     parser.add_argument("--dividend-rate", type=float, default=0.25, help="Provide a dividend tax rate")
+    parser.add_argument("--liquid", type=str, default=None, help="Load only liquid accounts yes/no default is None")
 
     # parse the command-line arguments
     args = parser.parse_args()
@@ -50,6 +51,10 @@ if __name__ == '__main__':
     filter_by_accounts = None
     if args.accounts:
         filter_by_accounts = args.accounts
+
+    metadata = store.load_accounts_metadata()
+    if args.liquid is not None:
+        filter_by_accounts = [m['account'].lower() for m in metadata.values() if m['liquid'] == args.liquid]
 
     transactions = store.load_transactions(filter_by_accounts=filter_by_accounts)
 

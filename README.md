@@ -20,6 +20,14 @@ Create a spreadsheet in Google Sheets and for each account you want to track cre
 5. `pps` - price per share
 6. `account` - name of the account
 
+In addition, create a sheet called `Summary` with the following columns:
+1. `Account` - name of the account
+2. `Description` - description of the account
+3. `Owner` - name of the owner of the account
+4. `Institution` - name of the institution
+5. `Institution ID` - ID of the account in the institution
+6. `Liquid` - yes/no if the account is liquid
+
 Then run the following command:
 ```zsh
 python main.py
