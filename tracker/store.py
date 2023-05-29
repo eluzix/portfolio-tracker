@@ -1,7 +1,7 @@
 import typing
 
 from tracker.cache_utils import get_cache
-from tracker.google_sheets_utils import collect_all_transactions
+from tracker.google_sheets_utils import collect_all_transactions, get_accounts_meta_data
 from tracker.providers import extract_symbols_prices
 from tracker.providers.alpha_vantage_utils import get_dividends_as_transactions
 from tracker.providers.exchange_rates import get_exchange_rates
@@ -74,3 +74,14 @@ def load_exchange_rates(currency: str):
             cache.set(key, exchange_rates, 60 * 60 * 12)
 
     return exchange_rates
+
+
+def load_accounts_metadata():
+    cache = get_cache()
+    accounts_metadata = cache.get('accounts_metadata')
+    if not accounts_metadata:
+        with console.status("[bold green]Collecting accounts metadata...") as status:
+            accounts_metadata = get_accounts_meta_data()
+            cache.set('accounts_metadata', accounts_metadata, 60 * 60 * 24 * 7)
+
+    return accounts_metadata

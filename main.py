@@ -26,19 +26,13 @@ if __name__ == '__main__':
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
     parser.add_argument("--currency", type=str, default="USD", help="Provide a currency")
     parser.add_argument("--dividend-rate", type=float, default=0.25, help="Provide a dividend tax rate")
+    parser.add_argument("--liquid", type=str, default=None, help="Load only liquid accounts yes/no default is None")
+    parser.add_argument("--owner", type=str, default=None, help="Load only accounts owned by this person")
 
     # parse the command-line arguments
     args = parser.parse_args()
-    if args.list_accounts:
-        all_sheets = list_accounts()
-        for sheet in all_sheets:
-            print(sheet)
-        sys.exit(0)
 
     cache = get_cache()
-    if args.clear_cache:
-        cache.clear()
-
     if args.reload:
         cache.delete('transactions')
 
@@ -48,9 +42,37 @@ if __name__ == '__main__':
     if args.reset_auth:
         cache.delete('google_token')
 
+    if args.clear_cache:
+        cache.clear()
+
+    if args.list_accounts:
+        all_sheets = list_accounts()
+        for sheet in all_sheets:
+            print(sheet)
+        sys.exit(0)
+
     filter_by_accounts = None
-    if args.accounts:
-        filter_by_accounts = args.accounts
+
+    if args.accounts is not None or args.liquid is not None or args.owner is not None:
+        filter_by_accounts = []
+        metadata = store.load_accounts_metadata()
+        for account_md in metadata.values():
+            checks = [True, True, True]
+            if args.accounts is not None:
+                checks[0] = account_md['account'].lower() in args.accounts
+
+            if args.liquid is not None:
+                checks[1] = account_md['liquid'] == args.liquid
+
+            if args.owner is not None:
+                checks[2] = account_md['owner'].lower() == args.owner.lower()
+
+            if all(checks):
+                filter_by_accounts.append(account_md['account'].lower())
+
+        if len(filter_by_accounts) == 0:
+            console.print(f'[bold red]No accounts found matching specified parameters[/]')
+            sys.exit(0)
 
     transactions = store.load_transactions(filter_by_accounts=filter_by_accounts)
 
@@ -144,3 +166,4 @@ if __name__ == '__main__':
     console.print(summary, style="bold bright_magenta")
 
     console.print(f'\n:raccoon: [bold purple]All Done![/] :raccoon:')
+    console.save_html('portfolio.html')

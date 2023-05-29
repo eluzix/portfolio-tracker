@@ -120,3 +120,30 @@ def collect_all_transactions(spreadsheet_id: str = None, included_sheets: list =
 
     return sorted_transactions
     # Print the sorted transactions
+
+
+def get_accounts_meta_data(spreadsheet_id: str = None, creds: Credentials = None):
+    if spreadsheet_id is None:
+        spreadsheet_id = get_secret('spreadsheet_id')
+
+    if creds is None:
+        creds = google_authenticate()
+
+    sheets_api = discovery.build('sheets', 'v4', credentials=creds)
+    result = sheets_api.spreadsheets().values().get(
+        spreadsheetId=spreadsheet_id, range='Summary').execute()
+    values = result.get('values', [])
+
+    metadata = {}
+    headers = None
+    for row in values:
+        # Ensure the row has the correct number of columns
+        if len(row) > 0 and row[0].lower() == 'account':
+            headers = [item.lower() for item in row]
+            continue
+
+        if len(row) == len(headers):
+            item = {k: v for k, v in zip(headers, row)}
+            metadata[item['account'].lower()] = item
+
+    return metadata
