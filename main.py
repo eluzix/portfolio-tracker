@@ -2,6 +2,7 @@ import argparse
 import sys
 
 from rich.table import Table
+from rich.text import Text
 from rich.traceback import install
 
 from tracker import store
@@ -137,5 +138,9 @@ if __name__ == '__main__':
     console.print(symbols_table)
     console.print('\n')
     console.print(info_table)
+
+    summary = '\n:moneybag: Total Portfolio Value :moneybag: --> '
+    summary = f"{summary}{currency_symbol}{totals['current_portfolio_value'] * exchange_rate:,.0f}"
+    console.print(summary, style="bold bright_magenta")
 
     console.print(f'\n:raccoon: [bold purple]All Done![/] :raccoon:')
