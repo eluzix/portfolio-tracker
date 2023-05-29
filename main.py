@@ -2,7 +2,6 @@ import argparse
 import sys
 
 from rich.table import Table
-from rich.text import Text
 from rich.traceback import install
 
 from tracker import store
@@ -20,7 +19,8 @@ if __name__ == '__main__':
     # add the list sheets and clear cache arguments
     parser.add_argument('--list-accounts', action='store_true', help='List available accounts')
     parser.add_argument("--accounts", nargs='+', help="Provide a list of accounts")
-    parser.add_argument("--reload", action='store_true', help="reload transaction list")
+    parser.add_argument("--reload-metadata", action='store_true', help="reload accounts metadata list")
+    parser.add_argument("--reload-transactions", action='store_true', help="reload transaction list")
     parser.add_argument('--reset-prices', action='store_true', help='re-fetch prices')
     parser.add_argument('--reset-auth', action='store_true', help='reset google authentication token')
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
@@ -28,13 +28,17 @@ if __name__ == '__main__':
     parser.add_argument("--dividend-rate", type=float, default=0.25, help="Provide a dividend tax rate")
     parser.add_argument("--liquid", type=str, default=None, help="Load only liquid accounts yes/no default is None")
     parser.add_argument("--owner", type=str, default=None, help="Load only accounts owned by this person")
+    parser.add_argument("--tags", nargs='+', help="Load only accounts with the following tags")
 
     # parse the command-line arguments
     args = parser.parse_args()
 
     cache = get_cache()
-    if args.reload:
+    if args.reload_transactions:
         cache.delete('transactions')
+
+    if args.reload_metadata:
+        cache.delete('accounts_metadata')
 
     if args.reset_prices:
         cache.delete('prices')
@@ -51,13 +55,16 @@ if __name__ == '__main__':
             print(sheet)
         sys.exit(0)
 
+    metadata = store.load_accounts_metadata()
     filter_by_accounts = None
+    if args.accounts is not None \
+            or args.liquid is not None \
+            or args.owner is not None \
+            or args.tags is not None:
 
-    if args.accounts is not None or args.liquid is not None or args.owner is not None:
         filter_by_accounts = []
-        metadata = store.load_accounts_metadata()
         for account_md in metadata.values():
-            checks = [True, True, True]
+            checks = [True, True, True, True]
             if args.accounts is not None:
                 checks[0] = account_md['account'].lower() in args.accounts
 
@@ -66,6 +73,13 @@ if __name__ == '__main__':
 
             if args.owner is not None:
                 checks[2] = account_md['owner'].lower() == args.owner.lower()
+
+            if args.tags is not None:
+                checks[3] = False
+                for tag in args.tags:
+                    if tag.lower() in account_md.get('tags', []):
+                        checks[3] = True
+                        break
 
             if all(checks):
                 filter_by_accounts.append(account_md['account'].lower())

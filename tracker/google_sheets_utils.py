@@ -144,6 +144,9 @@ def get_accounts_meta_data(spreadsheet_id: str = None, creds: Credentials = None
 
         if len(row) == len(headers):
             item = {k: v for k, v in zip(headers, row)}
+            tags = item.get('tags')
+            if tags is not None:
+                item['tags'] = [tag.lower().strip() for tag in tags.split(',')]
             metadata[item['account'].lower()] = item
 
     return metadata
