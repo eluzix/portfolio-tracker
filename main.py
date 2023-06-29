@@ -114,6 +114,7 @@ if __name__ == '__main__':
     symbols_table.add_column("PPS", justify="right")
     symbols_table.add_column("Share Value", justify="right")
     symbols_table.add_column("Dividends", justify="right")
+    symbols_table.add_column("Last Transaction", justify="right")
     symbols_table.add_column("Value", justify="right")
 
     all_symbols = store.get_all_symbols(transactions)
@@ -122,17 +123,20 @@ if __name__ == '__main__':
         quantity = totals['shares'].get(symbol, 0)
         avg_pps = totals['avg_pps'].get(symbol, 0)
         current_value = prices.get(symbol, {'adj_close': avg_pps})['adj_close']
+        last_transactions = totals['last_transactions'].get(symbol)
         symbols_table.add_row(
             symbol,
             f"{quantity:,.0f}",
             f"{currency_symbol}{avg_pps * exchange_rate:,.2f}",
             f'{currency_symbol}{current_value * exchange_rate:,.2f}',
             f"{currency_symbol}{totals['all_dividends'].get(symbol, 0) * exchange_rate:,.0f}",
+            f"{last_transactions['date'].strftime('%Y-%m-%d')} ({last_transactions['type']})",
             f"{currency_symbol}{quantity * current_value * exchange_rate:,.0f}"
         )
 
     info_table = Table(show_header=True, header_style="bold pale_turquoise1", title="Portfolio Analysis")
     info_table.add_column('Account', style="dim", width=20)
+    info_table.add_column('Last Transaction', justify="right")
     info_table.add_column('Total Invested', justify="right")
     info_table.add_column('Total Withdrawn', justify="right")
     info_table.add_column('Total Dividends', justify="right")
@@ -144,8 +148,10 @@ if __name__ == '__main__':
 
     last_item = len(all_data) - 1
     for i, (account, data) in enumerate(all_data.items()):
+        latest_transaction = max(data['last_transactions'].values(), key=lambda t: t['date'])
         info_table.add_row(
             account,
+            latest_transaction['date'].strftime('%Y-%m-%d'),
             f"{currency_symbol}{data['total_invested'] * exchange_rate:,.0f}",
             f"{currency_symbol}{data['total_withdrawn'] * exchange_rate:,.0f}",
             f"{currency_symbol}{data['total_dividends'] * exchange_rate:,.0f}",

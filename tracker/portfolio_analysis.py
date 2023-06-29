@@ -16,6 +16,7 @@ def analyze_account(transactions: list,
     total_invested = 0
     total_withdrawn = 0
     cash_flows = []
+    last_transactions = {}
 
     symbols = set(t["symbol"] for t in transactions)
     if load_dividends:
@@ -46,11 +47,13 @@ def analyze_account(transactions: list,
             avg_pps[symbol] = (avg_pps[symbol] * shares[symbol] + quantity * pps) / (shares[symbol] + quantity)
             shares[symbol] += quantity
             cash_flows.append((date, quantity * pps))
+            last_transactions[symbol] = {'date': date, 'type': 'buy'}
 
         elif transaction["type"] == "sell":
             total_withdrawn += quantity * pps
             shares[symbol] -= quantity
             cash_flows.append((date, 0 - (quantity * pps)))
+            last_transactions[symbol] = {'date': date, 'type': 'sell'}
 
         elif transaction["type"] == "dividend" and symbol in shares:
             # multiple pps with current number of shares
@@ -92,6 +95,7 @@ def analyze_account(transactions: list,
         "annualized_yield": annualized_yield,
         "modified_dietz_yield": modified_dietz_yield,
         "simple_yield": simple_yield,
+        'last_transactions': last_transactions
     }
 
     return account_info
