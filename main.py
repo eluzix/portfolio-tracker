@@ -166,6 +166,7 @@ if __name__ == '__main__':
     if last_item > 0:
         info_table.add_row(
             'Total',
+            '-',
             f"{currency_symbol}{totals['total_invested'] * exchange_rate:,.0f}",
             f"{currency_symbol}{totals['total_withdrawn'] * exchange_rate:,.0f}",
             f"{currency_symbol}{totals['total_dividends'] * exchange_rate:,.0f}",
