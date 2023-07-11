@@ -38,6 +38,9 @@ def get_dividends_as_transactions(stocks: typing.Union[list, set], start_date=No
         response = requests.get(url)
         data = json.loads(response.text)
         dividends = []
+        if 'Note' in data:
+            continue
+
         for date, values in data["Time Series (Daily)"].items():
             if start_date is not None and date < start_date:
                 continue

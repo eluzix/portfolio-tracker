@@ -77,10 +77,15 @@ def analyze_account(transactions: list,
     # Calculate Annualized Yield
     years_since_start = days_since_start / 365
     annualized_yield = ((1 + modified_dietz_yield) ** (1 / years_since_start)) - 1
+    if isinstance(annualized_yield, complex):
+        annualized_yield = annualized_yield.real
 
     # Simple yield
     total_dividends = sum(all_dividends.values())
-    simple_yield = (portfolio_gain + total_dividends) / current_portfolio_value
+    if current_portfolio_value == 0:
+        simple_yield = 0
+    else:
+        simple_yield = (portfolio_gain + total_dividends) / current_portfolio_value
 
     account_info = {
         "exchange_rate": 1,
