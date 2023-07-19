@@ -8,6 +8,7 @@ from tracker import store
 from tracker.cache_utils import get_cache
 from tracker.google_sheets_utils import list_accounts
 from tracker.portfolio_analysis import analyze_portfolio
+from tracker.store import load_currencies_metadata
 from tracker.utils import console
 
 install()
@@ -102,7 +103,8 @@ if __name__ == '__main__':
     currency_symbol = '$'
     currency = args.currency
     if currency != 'USD':
-        currency_symbol = '₪' if currency == 'ILS' else '$'
+        currency_meta = load_currencies_metadata()[currency]
+        currency_symbol = currency_meta['symbol']
         exchange_rate = store.load_exchange_rates(currency)
         console.print(f'\n:moneybag: [bold purple]Exchange Rate: {currency_symbol}{exchange_rate:.2f}[/] :moneybag:')
 

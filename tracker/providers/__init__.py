@@ -56,6 +56,23 @@ def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01'
     return dividends
 
 
+def load_currency_information():
+    key = get_secret('marketstack_key')
+    url = f'https://api.marketstack.com/v1/currencies?access_key={key}'
+    response = requests.get(url).json()
+    if 'error' in response:
+        console.print(f'[bold red]Error fetching currencies from marketstack: {response["error"]["message"]}[/]')
+        return None
+
+    data = response['data']
+    ret = {
+        item['code']: item
+        for item in data
+    }
+
+    return ret
+
+
 if __name__ == '__main__':
     # extract_symbols_prices(['VT'])
     load_dividend_information(['VT', 'HDV'])
