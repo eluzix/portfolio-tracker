@@ -22,7 +22,7 @@ def analyze_account(transactions: list,
     if load_dividends:
         dividends = store.load_dividends()
     else:
-        dividends = []
+        dividends = {}
 
     prices = store.load_prices()
     prices = {symbol: data['adj_close'] for symbol, data in prices.items()}

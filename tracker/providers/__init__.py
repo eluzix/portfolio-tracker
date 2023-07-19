@@ -4,14 +4,19 @@ import requests
 
 from tracker.config import get_secret
 from tracker.providers import alpha_vantage_utils
+from tracker.utils import console
 
 
 def extract_symbols_prices(symbols: typing.Union[list, set]):
     # Extract unique symbols from transactions
     unique_symbols = sorted(set(symbols))
     key = get_secret('marketstack_key')
-    url = f'http://api.marketstack.com/v1/eod/latest?access_key={key}&symbols={",".join(unique_symbols)}'
+    url = f'https://api.marketstack.com/v1/eod/latest?access_key={key}&symbols={",".join(unique_symbols)}'
     response = requests.get(url).json()
+    if 'error' in response:
+        console.print(f'[bold red]Error fetching prices from marketstack: {response["error"]["message"]}[/]')
+        return None
+
     data = response['data']
     ret = {item['symbol']: item for item in data if 'symbol' in item}
 
@@ -26,5 +31,31 @@ def extract_symbols_prices(symbols: typing.Union[list, set]):
     return ret
 
 
+def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01', limit: int = 1000) -> dict[str, list]:
+    unique_symbols = sorted(set(symbols))
+    key = get_secret('marketstack_key')
+    url = f'https://api.marketstack.com/v1/dividends?access_key={key}&symbols={",".join(unique_symbols)}&limit={limit}'
+
+    response = requests.get(url).json()
+    if 'error' in response:
+        console.print(f'[bold red]Error fetching prices from marketstack: {response["error"]["message"]}[/]')
+        return None
+
+    data = response['data']
+    dividends = {s: [] for s in unique_symbols}
+    for item in data:
+        dividends[item['symbol']].append({
+            'date': item['date'],
+            'type': 'dividend',
+            'symbol': item['symbol'],
+            'quantity': 0,
+            'pps': float(item['dividend']),
+            'account': ''
+        })
+
+    return dividends
+
+
 if __name__ == '__main__':
-    extract_symbols_prices(['VT'])
+    # extract_symbols_prices(['VT'])
+    load_dividend_information(['VT', 'HDV'])

@@ -22,6 +22,7 @@ if __name__ == '__main__':
     parser.add_argument("--reload-metadata", action='store_true', help="reload accounts metadata list")
     parser.add_argument("--reload-transactions", action='store_true', help="reload transaction list")
     parser.add_argument('--reset-prices', action='store_true', help='re-fetch prices')
+    parser.add_argument('--reset-dividends', action='store_true', help='reset dividends and re-fetch')
     parser.add_argument('--reset-auth', action='store_true', help='reset google authentication token')
     parser.add_argument('--clear-cache', action='store_true', help='Clear the cache')
     parser.add_argument("--currency", type=str, default="USD", help="Provide a currency")
@@ -42,6 +43,9 @@ if __name__ == '__main__':
 
     if args.reset_prices:
         cache.delete('prices')
+
+    if args.reset_dividends:
+        cache.delete('dividends')
 
     if args.reset_auth:
         cache.delete('google_token')

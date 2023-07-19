@@ -2,7 +2,7 @@ import typing
 
 from tracker.cache_utils import get_cache
 from tracker.google_sheets_utils import collect_all_transactions, get_accounts_meta_data
-from tracker.providers import extract_symbols_prices
+from tracker.providers import extract_symbols_prices, load_dividend_information
 from tracker.providers.alpha_vantage_utils import get_dividends_as_transactions
 from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
@@ -35,18 +35,18 @@ def get_all_symbols(transactions: list = None):
     return set(t["symbol"] for t in transactions)
 
 
-def load_dividends(symbols: typing.Union[list, set] = None):
+def load_dividends(symbols: typing.Union[list, set] = None) -> dict[str, list]:
     cache = get_cache()
     dividends = cache.get('dividends')
     if not dividends:
         with console.status("[bold green]Collecting dividends...") as status:
             symbols = get_all_symbols()
-            dividends = get_dividends_as_transactions(symbols)
+            dividends = load_dividend_information(symbols)
             cache.set('dividends', dividends, 60 * 60 * 24 * 7)
             status.update(f"[bold green]Collected {len(dividends)} dividends[/]")
 
-    if symbols is not None:
-        dividends = [d for d in dividends if d["symbol"] in symbols]
+    # if symbols is not None:
+    #     dividends = [d for d in dividends if d["symbol"] in symbols]
 
     return dividends
 
