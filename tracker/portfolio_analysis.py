@@ -18,7 +18,14 @@ def analyze_account(transactions: list,
     cash_flows = []
     last_transactions = {}
 
-    symbols = set(t["symbol"] for t in transactions)
+    symbols = set()
+    symbol_first_transaction = {}
+    for transaction in transactions:
+        symbols.add(transaction["symbol"])
+        symbol_date = symbol_first_transaction.get(transaction["symbol"], transaction["date"])
+        if transaction["date"] <= symbol_date:
+            symbol_first_transaction[transaction["symbol"]] = transaction["date"]
+
     if load_dividends:
         dividends = store.load_dividends()
     else:
@@ -27,8 +34,9 @@ def analyze_account(transactions: list,
     prices = store.load_prices()
     prices = {symbol: data['adj_close'] for symbol, data in prices.items()}
     for symbol in dividends:
-        if symbol in prices:
-            transactions.extend(dividends[symbol])
+        if symbol in symbols:
+            symbol_dividends = [d for d in dividends[symbol] if d["date"] >= symbol_first_transaction[symbol]]
+            transactions.extend(symbol_dividends)
     transactions.sort(key=lambda t: t["date"])
 
     all_dividends = {symbol: 0 for symbol in symbols}
@@ -64,15 +72,17 @@ def analyze_account(transactions: list,
             all_dividends[symbol] += transaction_value
             cash_flows.append((date, 0 - transaction_value))
 
+    total_dividends = sum(all_dividends.values())
+
     # Calculate other metrics
     current_portfolio_value = sum(prices[symbol] * shares[symbol] for symbol in shares)
-    portfolio_gain = current_portfolio_value - (total_invested + total_withdrawn)
+    portfolio_gain = (current_portfolio_value + total_withdrawn + total_dividends) - total_invested
 
     # Calculate Modified Dietz Yield
     today_date = datetime.strptime(now, "%Y-%m-%d")
     days_since_start = (today_date - cash_flows[0][0]).days
     weighted_cash_flows = sum((cf[1] * (today_date - cf[0]).days / days_since_start) for cf in cash_flows)
-    modified_dietz_yield = (portfolio_gain) / (total_invested + weighted_cash_flows)
+    modified_dietz_yield = portfolio_gain / (total_invested + weighted_cash_flows)
 
     # Calculate Annualized Yield
     years_since_start = days_since_start / 365
@@ -81,11 +91,10 @@ def analyze_account(transactions: list,
         annualized_yield = annualized_yield.real
 
     # Simple yield
-    total_dividends = sum(all_dividends.values())
     if current_portfolio_value == 0:
         simple_yield = 0
     else:
-        simple_yield = (portfolio_gain + total_dividends) / current_portfolio_value
+        simple_yield = portfolio_gain / current_portfolio_value
 
     account_info = {
         "exchange_rate": 1,
