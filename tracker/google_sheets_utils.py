@@ -95,6 +95,8 @@ def collect_all_transactions(spreadsheet_id: str = None, included_sheets: list =
     # Iterate over all sheets and gather transactions
     all_transactions = []
     for sheet_name in sheet_names:
+        if sheet_name.startswith('_'):
+            continue
         result = sheets_api.spreadsheets().values().get(
             spreadsheetId=spreadsheet_id, range=sheet_name).execute()
         values = result.get('values', [])
