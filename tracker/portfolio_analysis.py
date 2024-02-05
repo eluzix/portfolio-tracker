@@ -2,7 +2,7 @@ import collections
 from datetime import datetime
 
 from tracker import store
-from tracker.utils import console, today
+from tracker.utils import today
 
 
 def analyze_account(transactions: list,

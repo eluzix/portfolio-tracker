@@ -1,0 +1,100 @@
+service: tracker
+frameworkVersion: "3"
+
+provider:
+  name: aws
+  runtime: python3.12
+  region: us-east-1
+  timeout: 12
+  stage: ${opt:stage, 'prod'}
+
+  environment:
+    STAGE: prod
+
+  iam:
+    role:
+      statements:
+        - Effect: "Allow"
+          Action:
+            - "dynamodb:Batch*"
+            - "dynamodb:DeleteItem"
+            - "dynamodb:Get*"
+            - "dynamodb:List*"
+            - "dynamodb:Parti*"
+            - "dynamodb:PutItem"
+            - "dynamodb:Query"
+            - "dynamodb:UpdateItem"
+          Resource:
+            - Fn::GetAtt:
+                - DataTable
+                - Arn
+
+plugins:
+  - ./sls-secrets-plugin.js
+  - serverless-python-requirements
+
+custom:
+  stage: ${self:provider:stage, 'prod'}
+  pythonRequirements:
+    dockerizePip: true
+    noDeploy:
+      - rich
+      - google*
+      - pytest
+      - pylint
+
+  secrets_arn:
+    - "arn:aws:secretsmanager:us-east-1:838643176316:secret:tracker/api-Pv45dz"
+
+# you can add packaging information here
+package:
+  patterns:
+    - 'tracker/**'
+    - '.secrets.json'
+    - '!*.toml'
+    - '!*.lock'
+    - '!package.json'
+    - '!package-lock.json'
+    - '!node_modules/**'
+    - '!.idea/**'
+    - '!.git/**'
+    - '!test/**'
+    - '!tests/**'
+    - '!scripts/**'
+    - '!examples/**'
+    - '!*.iml'
+    - '!infrastructure/**'
+    - '!docker/**'
+    - '!README.*'
+    - '!jest.*'
+    - '!coverage/**'
+    - '!.**'
+
+functions:
+  sandbox:
+    handler: tracker/handlers.sandbox
+    events:
+      - http:
+          path: sandbox
+          method: get
+
+
+resources:
+  Resources:
+    DataTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:service}-data
+        AttributeDefinitions:
+          - AttributeName: PK
+            AttributeType: S
+          - AttributeName: SK
+            AttributeType: S
+        KeySchema:
+          - AttributeName: PK
+            KeyType: HASH
+          - AttributeName: SK
+            KeyType: RANGE
+        ProvisionedThroughput:
+          ReadCapacityUnits: 10
+          WriteCapacityUnits: 5

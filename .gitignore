@@ -1,5 +1,7 @@
 portfolio.html
-*.json
+secrets.json
+credentials.json
+token.json
 cache/
 
 # Byte-compiled / optimized / DLL files
