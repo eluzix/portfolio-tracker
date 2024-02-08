@@ -1,13 +1,16 @@
 import typing
+from dataclasses import asdict
 
 from tracker.cache_utils import get_cache
+from tracker.dynamodb import ddb
 from tracker.google_sheets_utils import collect_all_transactions, get_accounts_meta_data
+from tracker.models import Account, Transaction
 from tracker.providers import extract_symbols_prices, load_dividend_information, load_currency_information
 from tracker.providers.exchange_rates import get_exchange_rates
 from tracker.utils import console
 
 
-def load_transactions(filter_by_accounts: list = None):
+def load_transactions_from_sheets(filter_by_accounts: list = None):
     cache = get_cache()
     transactions = cache.get('transactions')
     if not transactions:
@@ -29,7 +32,7 @@ def load_transactions(filter_by_accounts: list = None):
 
 def get_all_symbols(transactions: list = None):
     if transactions is None:
-        transactions = load_transactions()
+        transactions = load_transactions_from_sheets()
 
     return set(t["symbol"] for t in transactions)
 
@@ -86,12 +89,88 @@ def load_currencies_metadata():
     return currencies_metadata
 
 
-def load_accounts_metadata():
-    cache = get_cache()
-    accounts_metadata = cache.get('accounts_metadata')
-    if not accounts_metadata:
-        with console.status("[bold green]Collecting accounts metadata...") as status:
-            accounts_metadata = get_accounts_meta_data()
-            cache.set('accounts_metadata', accounts_metadata, 60 * 60 * 24 * 7)
+def load_accounts_metadata_from_sheet():
+    # cache = get_cache()
+    # accounts_metadata = cache.get('accounts_metadata')
+    # if not accounts_metadata:
+    with console.status("[bold green]Collecting accounts metadata...") as status:
+        accounts_metadata = get_accounts_meta_data()
+        # cache.set('accounts_metadata', accounts_metadata, 60 * 60 * 24 * 7)
 
     return accounts_metadata
+
+
+# ---- new methods for ddb ----
+def save_account_metadata(user_id: str, accounts: list[Account]):
+    save_accounts = []
+    for account in accounts:
+        item = asdict(account)
+        item.update({
+            'PK': f'user#{user_id}',
+            'SK': f'account#{account.id}',
+        })
+        save_accounts.append(item)
+
+    ddb.batch_write_items('tracker-data', save_accounts)
+
+
+def load_accounts_metadata(user_id: str):
+    items = ddb.query('tracker-data', **{
+        'KeyConditionExpression': 'PK = :pk and begins_with(SK, :sk)',
+        'ExpressionAttributeValues': {
+            ':pk': ddb.serialize_value(f'user#{user_id}'),
+            ':sk': ddb.serialize_value('account#')
+        }
+    })
+
+    return [Account.from_dict(item) for item in items]
+
+
+def save_transactions(user_id: str, transactions: list[Transaction]):
+    save_items = []
+    for transaction in transactions:
+        item = asdict(transaction)
+        item.update({
+            'PK': f'user#{user_id}',
+            'SK': f'transaction#{transaction.account_id}#{transaction.id}',
+        })
+        save_items.append(item)
+    ddb.batch_write_items('tracker-data', save_items)
+
+
+def load_transactions(user_id: str):
+    items = ddb.query('tracker-data', **{
+        'KeyConditionExpression': 'PK = :pk and begins_with(SK, :sk)',
+        'ExpressionAttributeValues': {
+            ':pk': ddb.serialize_value(f'user#{user_id}'),
+            ':sk': ddb.serialize_value('transaction#')
+        }
+    })
+
+    return [Transaction.from_dict(item) for item in items]
+
+
+def load_user_data(user_id: str) -> tuple[list[Account], dict[str, list[Transaction]]]:
+    accounts: list[Account] = []
+    transactions: dict[str, list[Transaction]] = {}
+    items = ddb.query('tracker-data', **{
+        'KeyConditionExpression': 'PK = :pk',
+        'ExpressionAttributeValues': {
+            ':pk': ddb.serialize_value(f'user#{user_id}'),
+        }
+    })
+
+    for item in items:
+        if item['SK'].startswith('account#'):
+            accounts.append(Account.from_dict(item))
+        elif item['SK'].startswith('transaction#'):
+            account_id = item['account_id']
+            if account_id not in transactions:
+                transactions[account_id] = []
+            transactions[account_id].append(Transaction.from_dict(item))
+
+    # sort transactions by date
+    for account_id in transactions:
+        transactions[account_id] = sorted(transactions[account_id], key=lambda t: t.date)
+
+    return accounts, transactions

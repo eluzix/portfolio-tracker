@@ -60,7 +60,7 @@ if __name__ == '__main__':
             print(sheet)
         sys.exit(0)
 
-    metadata = store.load_accounts_metadata()
+    metadata = store.load_accounts_metadata_from_sheet()
     filter_by_accounts = None
     if args.accounts is not None \
             or args.liquid is not None \
@@ -93,7 +93,7 @@ if __name__ == '__main__':
             console.print(f'[bold red]No accounts found matching specified parameters[/]')
             sys.exit(0)
 
-    transactions = store.load_transactions(filter_by_accounts=filter_by_accounts)
+    transactions = store.load_transactions_from_sheets(filter_by_accounts=filter_by_accounts)
 
     kwargs = {
         'dividend_tax_rate': args.dividend_rate,
