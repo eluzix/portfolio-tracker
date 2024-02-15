@@ -140,7 +140,7 @@ def get_accounts_meta_data(spreadsheet_id: str = None, creds: Credentials = None
     headers = None
     for row in values:
         # Ensure the row has the correct number of columns
-        if len(row) > 0 and row[0].lower() == 'account':
+        if len(row) > 0 and row[0].lower() == 'id':
             headers = [item.lower() for item in row]
             continue
 
