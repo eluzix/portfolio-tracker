@@ -1,9 +1,12 @@
 import boto3
 
 from tracker import store, utils
+from tracker.dynamodb import ddb
 from tracker.models import Account, Transaction
+from tracker.portfolio_analysis import analyze_account
 
 USER_ID = '1'
+
 
 def dump_accounts_metadata_to_ddb():
     accounts: list[Account] = []
@@ -42,15 +45,38 @@ def dump_transactions_to_ddb():
         saved_transactions.append(t)
 
     store.save_transactions(USER_ID, saved_transactions)
+    print(f'Saved {len(saved_transactions)} transactions')
+
+
+def clan_all_transactions():
+    all_keys = []
+    items = ddb.query('tracker-data', **{
+        'ProjectionExpression': 'PK, SK',
+        'KeyConditionExpression': 'PK = :pk and begins_with(SK, :sk)',
+        'ExpressionAttributeValues': {
+            ':pk': ddb.serialize_value(f'user#{USER_ID}'),
+            ':sk': ddb.serialize_value('transaction#')
+        }
+    })
+    for item in items:
+        all_keys.append({
+            'PK': item['PK'],
+            'SK': item['SK']
+        })
+
+    ddb.batch_delete_items('tracker-data', all_keys)
+    print(f'Deleted {len(all_keys)} transactions')
 
 
 def test_load():
     accounts, transactions = store.load_user_data(USER_ID)
-    for account in accounts:
-        print(account)
+    # for account in accounts:
+    #     print(account)
+    #
+    # for account_id in transactions:
+    #     print(transactions[account_id])
 
-    for transaction in transactions:
-        print(transaction)
+    print(analyze_account(transactions['1']))
 
 
 if __name__ == '__main__':
@@ -58,3 +84,4 @@ if __name__ == '__main__':
     test_load()
     # dump_accounts_metadata_to_ddb()
     # dump_transactions_to_ddb()
+    # clan_all_transactions()

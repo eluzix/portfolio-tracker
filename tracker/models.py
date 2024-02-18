@@ -45,7 +45,7 @@ class Transaction:
     def from_dict(cls, data: dict) -> 'Transaction':
         t = {
             'id': data.get('id'),
-            'account_id': data['account_id'],
+            'account_id': data.get('account_id'),
             'symbol': data['symbol'],
             'date': data['date'],
             'type': data['type'],

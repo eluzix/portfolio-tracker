@@ -30,19 +30,21 @@ def load_transactions_from_sheets(filter_by_accounts: list = None):
     return transactions
 
 
-def get_all_symbols(transactions: list = None):
-    if transactions is None:
-        transactions = load_transactions_from_sheets()
+def get_all_symbols(transactions: list[Transaction] | dict[str, list[Transaction]]) -> list[str]:
+    if isinstance(transactions, dict):
+        _transactions = []
+        for transactions_list in transactions.values():
+            _transactions.extend(transactions_list)
+        transactions = _transactions
 
-    return set(t["symbol"] for t in transactions)
+    return list(set([t.symbol for t in transactions]))
 
 
-def load_dividends(symbols: typing.Union[list, set] = None) -> dict[str, list]:
+def load_dividends(symbols: typing.Union[list, set]) -> dict[str, list[Transaction]]:
     cache = get_cache()
     dividends = cache.get('dividends')
     if not dividends:
         with console.status("[bold green]Collecting dividends...") as status:
-            symbols = get_all_symbols()
             dividends = load_dividend_information(symbols)
             cache.set('dividends', dividends, 60 * 60 * 24 * 7)
             status.update(f"[bold green]Collected {len(dividends)} dividends[/]")
@@ -53,12 +55,11 @@ def load_dividends(symbols: typing.Union[list, set] = None) -> dict[str, list]:
     return dividends
 
 
-def load_prices():
+def load_prices(symbols: list[str]):
     cache = get_cache()
     prices = cache.get('prices')
     if not prices:
         with console.status("[bold green]Collecting prices...") as status:
-            symbols = get_all_symbols()
             prices = extract_symbols_prices(symbols)
             cache.set('prices', prices, 60 * 60 * 12)
             status.update(f"[bold green]Collected {len(prices)} prices[/]")
