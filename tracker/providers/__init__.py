@@ -3,6 +3,7 @@ import typing
 import requests
 
 from tracker.config import get_secret
+from tracker.models import Transaction
 from tracker.providers import alpha_vantage_utils
 from tracker.utils import console
 
@@ -31,7 +32,9 @@ def extract_symbols_prices(symbols: typing.Union[list, set]):
     return ret
 
 
-def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01', limit: int = 1000) -> dict[str, list]:
+def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01', limit: int = 1000) -> typing.Optional[
+    dict[str, list[Transaction]]]:
+
     unique_symbols = sorted(set(symbols))
     key = get_secret('marketstack_key')
     url = f'https://api.marketstack.com/v1/dividends?access_key={key}&symbols={",".join(unique_symbols)}&limit={limit}'
@@ -44,7 +47,7 @@ def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01'
     data = response['data']
     dividends = {s: [] for s in unique_symbols}
     for item in data:
-        dividends[item['symbol']].append({
+        t = Transaction.from_dict({
             'date': item['date'],
             'type': 'dividend',
             'symbol': item['symbol'],
@@ -52,6 +55,7 @@ def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01'
             'pps': float(item['dividend']),
             'account': ''
         })
+        dividends[item['symbol']].append(t)
 
     return dividends
 

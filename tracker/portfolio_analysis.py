@@ -1,11 +1,12 @@
-import collections
 from datetime import datetime
 
 from tracker import store
-from tracker.utils import console, today
+from tracker.models import Transaction
+from tracker.store import get_all_symbols
+from tracker.utils import today
 
 
-def analyze_account(transactions: list,
+def analyze_account(transactions: list[Transaction],
                     dividend_tax_rate=None,
                     load_dividends=True):
     now = today()
@@ -21,32 +22,33 @@ def analyze_account(transactions: list,
     symbols = set()
     symbol_first_transaction = {}
     for transaction in transactions:
-        symbols.add(transaction["symbol"])
-        symbol_date = symbol_first_transaction.get(transaction["symbol"], transaction["date"])
-        if transaction["date"] <= symbol_date:
-            symbol_first_transaction[transaction["symbol"]] = transaction["date"]
+        symbols.add(transaction.symbol)
+        symbol_date = symbol_first_transaction.get(transaction.symbol, transaction.date)
+        if transaction.date <= symbol_date:
+            symbol_first_transaction[transaction.symbol] = transaction.date
 
+    all_symbols = get_all_symbols(transactions)
     if load_dividends:
-        dividends = store.load_dividends()
+        dividends = store.load_dividends(all_symbols)
     else:
         dividends = {}
 
-    prices = store.load_prices()
+    prices = store.load_prices(all_symbols)
     prices = {symbol: data['adj_close'] for symbol, data in prices.items()}
     for symbol in dividends:
         if symbol in symbols:
-            symbol_dividends = [d for d in dividends[symbol] if d["date"] >= symbol_first_transaction[symbol]]
+            symbol_dividends = [d for d in dividends[symbol] if d.date >= symbol_first_transaction[symbol]]
             transactions.extend(symbol_dividends)
-    transactions.sort(key=lambda t: t["date"])
+    transactions.sort(key=lambda t: t.date)
 
     all_dividends = {symbol: 0 for symbol in symbols}
     for transaction in transactions:
-        date = datetime.strptime(transaction["date"], "%Y-%m-%d")
-        symbol = transaction["symbol"]
-        quantity = float(transaction["quantity"])
-        pps = float(transaction["pps"])
+        date = datetime.strptime(transaction.date, "%Y-%m-%d")
+        symbol = transaction.symbol
+        quantity = float(transaction.quantity)
+        pps = float(transaction.pps)
 
-        if transaction["type"] == "buy":
+        if transaction.type == "buy":
             if symbol not in shares:
                 shares[symbol] = 0
                 avg_pps[symbol] = 0
@@ -57,13 +59,13 @@ def analyze_account(transactions: list,
             cash_flows.append((date, quantity * pps))
             last_transactions[symbol] = {'date': date, 'type': 'buy'}
 
-        elif transaction["type"] == "sell":
+        elif transaction.type == "sell":
             total_withdrawn += quantity * pps
             shares[symbol] -= quantity
             cash_flows.append((date, 0 - (quantity * pps)))
             last_transactions[symbol] = {'date': date, 'type': 'sell'}
 
-        elif transaction["type"] == "dividend" and symbol in shares:
+        elif transaction.type == "dividend" and symbol in shares:
             # multiple pps with current number of shares
             if dividend_tax_rate is not None:
                 pps *= (1 - dividend_tax_rate)
@@ -115,22 +117,28 @@ def analyze_account(transactions: list,
     return account_info
 
 
-def analyze_portfolio(transactions: list,
+def analyze_portfolio(transactions: dict[str, list[Transaction]],
                       dividend_tax_rate=None,
                       load_dividends=True):
+    all_transactions = []
     # Group transactions by account
-    transactions_by_account = collections.defaultdict(list)
-    for transaction in transactions:
-        account = transaction.get('account', 'default')
-        transactions_by_account[account].append(transaction)
-        transactions_by_account['total'].append(transaction)
+    # transactions_by_account = collections.defaultdict(list)
+    # for transaction in transactions:
+    #     account = transaction.get('account', 'default')
+    #     transactions_by_account[account].append(transaction)
+    #     transactions_by_account['total'].append(transaction)
 
     # Perform analysis for each account
     portfolio_summary = {}
-    for account, account_transactions in transactions_by_account.items():
-        portfolio_summary[account] = analyze_account(account_transactions,
-                                                     dividend_tax_rate,
-                                                     load_dividends)
+    for account_id, account_transactions in transactions.items():
+        all_transactions.extend(account_transactions)
+        portfolio_summary[account_id] = analyze_account(account_transactions,
+                                                        dividend_tax_rate,
+                                                        load_dividends)
+
+    portfolio_summary['total'] = analyze_account(all_transactions,
+                                                 dividend_tax_rate,
+                                                 load_dividends)
 
     return portfolio_summary
 

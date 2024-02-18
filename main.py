@@ -1,6 +1,7 @@
 import argparse
 import sys
 
+import boto3
 from rich.table import Table
 from rich.traceback import install
 
@@ -12,8 +13,11 @@ from tracker.store import load_currencies_metadata
 from tracker.utils import console
 
 install()
+USER_ID = '1'
 
 if __name__ == '__main__':
+    boto3.setup_default_session(profile_name='tracker')
+
     # create the parser object
     parser = argparse.ArgumentParser()
 
@@ -55,45 +59,43 @@ if __name__ == '__main__':
         cache.clear()
 
     if args.list_accounts:
-        all_sheets = list_accounts()
-        for sheet in all_sheets:
+        all_accounts = store.load_accounts_metadata(USER_ID)
+        for sheet in all_accounts:
             print(sheet)
         sys.exit(0)
 
-    metadata = store.load_accounts_metadata()
+    accounts, transactions = store.load_user_data(USER_ID)
+    accounts_map = {account.id: account for account in accounts}
+    # metadata = store.load_accounts_metadata_from_sheet()
     filter_by_accounts = None
     if args.accounts is not None \
-            or args.liquid is not None \
             or args.owner is not None \
             or args.tags is not None:
 
         filter_by_accounts = []
-        for account_md in metadata.values():
+        for account_md in accounts:
             checks = [True, True, True, True]
             if args.accounts is not None:
-                checks[0] = account_md['account'].lower() in args.accounts
-
-            if args.liquid is not None:
-                checks[1] = account_md['liquid'] == args.liquid
+                checks[0] = account_md.name.lower() in args.accounts
 
             if args.owner is not None:
-                checks[2] = account_md['owner'].lower() == args.owner.lower()
+                checks[2] = account_md.owner.lower() == args.owner.lower()
 
             if args.tags is not None:
                 checks[3] = False
                 for tag in args.tags:
-                    if tag.lower() in account_md.get('tags', []):
+                    if tag.lower() in account_md.tags:
                         checks[3] = True
                         break
 
             if all(checks):
-                filter_by_accounts.append(account_md['account'].lower())
+                filter_by_accounts.append(account_md.name.lower())
 
         if len(filter_by_accounts) == 0:
             console.print(f'[bold red]No accounts found matching specified parameters[/]')
             sys.exit(0)
 
-    transactions = store.load_transactions(filter_by_accounts=filter_by_accounts)
+    # transactions = store.load_transactions_from_sheets(filter_by_accounts=filter_by_accounts)
 
     kwargs = {
         'dividend_tax_rate': args.dividend_rate,
@@ -124,7 +126,7 @@ if __name__ == '__main__':
     symbols_table.add_column("Value", justify="right")
 
     all_symbols = store.get_all_symbols(transactions)
-    prices = store.load_prices()
+    prices = store.load_prices(all_symbols)
     for symbol in all_symbols:
         quantity = totals['shares'].get(symbol, 0)
         avg_pps = totals['avg_pps'].get(symbol, 0)
@@ -156,7 +158,7 @@ if __name__ == '__main__':
     for i, (account, data) in enumerate(all_data.items()):
         latest_transaction = max(data['last_transactions'].values(), key=lambda t: t['date'])
         info_table.add_row(
-            account,
+            accounts_map[account].name,
             latest_transaction['date'].strftime('%Y-%m-%d'),
             f"{currency_symbol}{data['total_invested'] * exchange_rate:,.0f}",
             f"{currency_symbol}{data['total_withdrawn'] * exchange_rate:,.0f}",
@@ -189,8 +191,8 @@ if __name__ == '__main__':
     console.print(info_table)
 
     if currency != 'USD':
-        console.print(f'\n:moneybag: [bold bright_magenta]Exchange Rate:[/] {currency_symbol}{exchange_rate:.2f} :moneybag:')
-
+        console.print(
+            f'\n:moneybag: [bold bright_magenta]Exchange Rate:[/] {currency_symbol}{exchange_rate:.2f} :moneybag:')
 
     summary = '\n:moneybag: Total Portfolio Value :moneybag: --> '
     summary = f"{summary}{currency_symbol}{totals['current_portfolio_value'] * exchange_rate:,.0f}"
