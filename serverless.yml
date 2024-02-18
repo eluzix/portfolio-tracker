@@ -6,10 +6,12 @@ provider:
   runtime: python3.12
   region: us-east-1
   timeout: 12
+  profile: tracker
   stage: ${opt:stage, 'prod'}
 
   environment:
     STAGE: prod
+    LOCAL_CACHE: "yes"
 
   iam:
     role:
@@ -76,6 +78,20 @@ functions:
     events:
       - http:
           path: sandbox
+          method: get
+
+  analysis:
+    handler: tracker/handlers.portfolio_analysis
+    events:
+      - http:
+          path: analysis
+          method: get
+
+  transactions:
+    handler: tracker/handlers.all_transactions
+    events:
+      - http:
+          path: transactions
           method: get
 
 

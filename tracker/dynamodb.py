@@ -7,6 +7,12 @@ from boto3.dynamodb.types import TypeSerializer, TypeDeserializer
 from tracker.utils import decimal_to_number
 
 
+def hash_sort(pk, sk):
+    return {
+        'PK': pk,
+        'SK': sk
+    }
+
 class Dynamodb(object):
     def __init__(self):
         self._connection = None

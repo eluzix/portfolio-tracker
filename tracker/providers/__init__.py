@@ -5,7 +5,6 @@ import requests
 from tracker.config import get_secret
 from tracker.models import Transaction
 from tracker.providers import alpha_vantage_utils
-from tracker.utils import console
 
 
 def extract_symbols_prices(symbols: typing.Union[list, set]):
@@ -15,7 +14,7 @@ def extract_symbols_prices(symbols: typing.Union[list, set]):
     url = f'https://api.marketstack.com/v1/eod/latest?access_key={key}&symbols={",".join(unique_symbols)}'
     response = requests.get(url).json()
     if 'error' in response:
-        console.print(f'[bold red]Error fetching prices from marketstack: {response["error"]["message"]}[/]')
+        print(f'Error fetching prices from marketstack: {response["error"]["message"]}')
         return None
 
     data = response['data']
@@ -34,14 +33,13 @@ def extract_symbols_prices(symbols: typing.Union[list, set]):
 
 def load_dividend_information(symbols: list | set, date_from: str = '2014-01-01', limit: int = 1000) -> typing.Optional[
     dict[str, list[Transaction]]]:
-
     unique_symbols = sorted(set(symbols))
     key = get_secret('marketstack_key')
     url = f'https://api.marketstack.com/v1/dividends?access_key={key}&symbols={",".join(unique_symbols)}&limit={limit}'
 
     response = requests.get(url).json()
     if 'error' in response:
-        console.print(f'[bold red]Error fetching prices from marketstack: {response["error"]["message"]}[/]')
+        print(f'Error fetching prices from marketstack: {response["error"]["message"]}')
         return None
 
     data = response['data']
@@ -65,7 +63,7 @@ def load_currency_information():
     url = f'https://api.marketstack.com/v1/currencies?access_key={key}'
     response = requests.get(url).json()
     if 'error' in response:
-        console.print(f'[bold red]Error fetching currencies from marketstack: {response["error"]["message"]}[/]')
+        print(f'Error fetching currencies from marketstack: {response["error"]["message"]}')
         return None
 
     data = response['data']

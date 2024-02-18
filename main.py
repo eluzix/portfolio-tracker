@@ -5,12 +5,10 @@ import boto3
 from rich.table import Table
 from rich.traceback import install
 
+from scripts.script_utils import console, load_currencies_metadata, load_exchange_rates
 from tracker import store
 from tracker.cache_utils import get_cache
-from tracker.google_sheets_utils import list_accounts
 from tracker.portfolio_analysis import analyze_portfolio
-from tracker.store import load_currencies_metadata
-from tracker.utils import console
 
 install()
 USER_ID = '1'
@@ -24,8 +22,6 @@ if __name__ == '__main__':
     # add the list sheets and clear cache arguments
     parser.add_argument('--list-accounts', action='store_true', help='List available accounts')
     parser.add_argument("--accounts", nargs='+', help="Provide a list of accounts")
-    parser.add_argument("--reload-metadata", action='store_true', help="reload accounts metadata list")
-    parser.add_argument("--reload-transactions", action='store_true', help="reload transaction list")
     parser.add_argument('--reset-prices', action='store_true', help='re-fetch prices')
     parser.add_argument('--reset-dividends', action='store_true', help='reset dividends and re-fetch')
     parser.add_argument('--reset-auth', action='store_true', help='reset google authentication token')
@@ -40,12 +36,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     cache = get_cache()
-    if args.reload_transactions:
-        cache.delete('transactions')
-
-    if args.reload_metadata:
-        cache.delete('accounts_metadata')
-
     if args.reset_prices:
         cache.delete('prices')
 
@@ -60,13 +50,20 @@ if __name__ == '__main__':
 
     if args.list_accounts:
         all_accounts = store.load_accounts_metadata(USER_ID)
+        symbols_table = Table(show_header=True, header_style="bold pale_turquoise1", title="Accounts")
+        symbols_table.add_column("ID", style="dim")
+        symbols_table.add_column("Name")
+        symbols_table.add_column("Owner")
+        symbols_table.add_column("Institution")
+        symbols_table.add_column("Tags")
         for sheet in all_accounts:
-            print(sheet)
+            symbols_table.add_row(sheet.id, sheet.name, sheet.owner, sheet.institution, ', '.join(sheet.tags))
+        console.print(symbols_table)
         sys.exit(0)
 
     accounts, transactions = store.load_user_data(USER_ID)
     accounts_map = {account.id: account for account in accounts}
-    # metadata = store.load_accounts_metadata_from_sheet()
+
     filter_by_accounts = None
     if args.accounts is not None \
             or args.owner is not None \
@@ -107,7 +104,7 @@ if __name__ == '__main__':
     if currency != 'USD':
         currency_meta = load_currencies_metadata()[currency]
         currency_symbol = currency_meta['symbol']
-        exchange_rate = store.load_exchange_rates(currency)
+        exchange_rate = load_exchange_rates(currency)
         # console.print(f'\n:moneybag: [bold purple]Exchange Rate: {currency_symbol}{exchange_rate:.2f}[/] :moneybag:')
 
     all_data = analyze_portfolio(transactions, **kwargs)

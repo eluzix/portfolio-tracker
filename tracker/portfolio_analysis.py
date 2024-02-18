@@ -77,7 +77,7 @@ def analyze_account(transactions: list[Transaction],
     total_dividends = sum(all_dividends.values())
 
     # Calculate other metrics
-    current_portfolio_value = sum(prices[symbol] * shares[symbol] for symbol in shares)
+    current_portfolio_value = sum(prices.get(symbol, 0) * shares[symbol] for symbol in shares)
     portfolio_gain = (current_portfolio_value + total_withdrawn + total_dividends) - total_invested
 
     # Calculate Modified Dietz Yield
