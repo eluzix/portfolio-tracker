@@ -23,14 +23,17 @@ class DdbCache:
 
         return None
 
-    def set(self, key: str, value, ttl: int):
+    def set(self, key: str, value, ttl: int = None):
         now = int(time.time())
-        ddb.put_item('tracker-data', {
+        item = {
             'PK': 'CACHE',
             'SK': key,
-            'ttl': now + ttl,
             'value': msgspec.json.encode(value)
-        })
+        }
+        if ttl is not None:
+            item['ttl'] = now + ttl
+
+        ddb.put_item('tracker-data', item)
 
         if key in self._local_cache:
             self._local_cache[key] = value

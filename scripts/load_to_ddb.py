@@ -1,5 +1,6 @@
 import boto3
 
+from scripts.script_utils import load_transactions_from_sheets
 from tracker import store, utils
 from tracker.dynamodb import ddb
 from tracker.models import Account, Transaction
@@ -31,7 +32,7 @@ def dump_accounts_metadata_to_ddb():
 def dump_transactions_to_ddb():
     accounts = store.load_accounts_metadata(USER_ID)
     account_map = {account.name.lower(): account.id for account in accounts}
-    transactions = store.load_transactions_from_sheets()
+    transactions = load_transactions_from_sheets()
     saved_transactions = []
     for transaction in transactions:
         account = account_map.get(transaction['account'].lower())
@@ -81,7 +82,7 @@ def test_load():
 
 if __name__ == '__main__':
     boto3.setup_default_session(profile_name='tracker')
-    test_load()
+    # test_load()
     # dump_accounts_metadata_to_ddb()
-    # dump_transactions_to_ddb()
+    dump_transactions_to_ddb()
     # clan_all_transactions()
