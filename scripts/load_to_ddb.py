@@ -1,3 +1,5 @@
+import hashlib
+
 import boto3
 
 from scripts.script_utils import load_transactions_from_sheets
@@ -34,14 +36,23 @@ def dump_transactions_to_ddb():
     account_map = {account.name.lower(): account.id for account in accounts}
     transactions = load_transactions_from_sheets()
     saved_transactions = []
+    tids = set()
     for transaction in transactions:
         account = account_map.get(transaction['account'].lower())
         if account is None:
             print(f'Account not found for {transaction["account"]}')
             continue
 
-        transaction['id'] = utils.generate_id()
+        # transaction['id'] = utils.generate_id()
         transaction['account_id'] = account
+        transaction_id = hashlib.sha224(
+            f"{transaction['account_id']}#{transaction['symbol']}#{transaction['date']}#{transaction['type']}#{transaction['quantity']}#{transaction['pps']}".encode()).hexdigest()
+
+        while transaction_id in tids:
+            transaction_id = f'{transaction_id}0'
+
+        tids.add(transaction_id)
+        transaction['id'] = transaction_id
         t = Transaction.from_dict(transaction)
         saved_transactions.append(t)
 
@@ -71,18 +82,23 @@ def clan_all_transactions():
 
 def test_load():
     accounts, transactions = store.load_user_data(USER_ID)
+
     # for account in accounts:
     #     print(account)
     #
-    # for account_id in transactions:
-    #     print(transactions[account_id])
+    all_transactions = []
+    for account_id in transactions:
+        all_transactions.extend(transactions[account_id])
 
-    print(analyze_account(transactions['1']))
+    print(f'Loaded {len(all_transactions)} transactions for {len(accounts)} accounts')
+
+    res = analyze_account(transactions['7'])
+    print(res)
 
 
 if __name__ == '__main__':
     boto3.setup_default_session(profile_name='tracker')
-    # test_load()
+    test_load()
     # dump_accounts_metadata_to_ddb()
-    dump_transactions_to_ddb()
+    # dump_transactions_to_ddb()
     # clan_all_transactions()
