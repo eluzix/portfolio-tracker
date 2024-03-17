@@ -16,7 +16,7 @@ class DdbCache:
         item = ddb.get_item('tracker-data', hash_sort(f'CACHE', key))
         if item is not None:
             now = int(time.time())
-            if item['ttl'] > now:
+            if item.get('ttl', 0) > now:
                 val = msgspec.json.decode(item['value'].value)
                 self._local_cache[key] = val
                 return val
