@@ -34,3 +34,10 @@ python main.py
 ```
 You can also pass `dividend_tax_rate` to `analyze_portfolio` to calculate the impact of taxes on your dividends.
 
+
+# #Radicle
+
+To clone this repository on [Radicle](https://radicle.xyz), simply run:
+```zsh
+rad clone rad:z4TxWeegmqBVrJVwNAUHHRuFSGiTY
+```
