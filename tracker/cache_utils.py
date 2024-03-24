@@ -9,7 +9,7 @@ class DdbCache:
     def __init__(self):
         self._local_cache = {}
 
-    def get(self, key: str):
+    def get(self, key: str, default=None):
         if key in self._local_cache:
             return self._local_cache[key]
 
@@ -21,7 +21,7 @@ class DdbCache:
                 self._local_cache[key] = val
                 return val
 
-        return None
+        return default
 
     def set(self, key: str, value, ttl: int = None):
         now = int(time.time())

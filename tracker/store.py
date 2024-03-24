@@ -24,9 +24,11 @@ def load_dividends(symbols: typing.Union[list, set]) -> dict[str, list[Transacti
 
 def load_prices(symbols: list[str]):
     cache = get_cache()
-    prices = cache.get('prices')
-    if not prices:
-        prices = extract_symbols_prices(symbols)
+    prices = cache.get('prices', {})
+    missing_symbols = set(symbols) - set(prices.keys())
+    if len(missing_symbols) > 0:
+        missing_prices = extract_symbols_prices(missing_symbols)
+        prices.update(missing_prices)
         cache.set('prices', prices, 60 * 60 * 12)
 
     return prices
