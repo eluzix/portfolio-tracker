@@ -8,7 +8,7 @@ from rich.traceback import install
 from scripts.script_utils import console, load_currencies_metadata, load_exchange_rates
 from tracker import store
 from tracker.cache_utils import get_cache
-from tracker.portfolio_analysis import analyze_portfolio
+from tracker.portfolio_analysis import analyze_portfolio, filter_transactions
 
 install()
 USER_ID = '1'
@@ -86,13 +86,13 @@ if __name__ == '__main__':
                         break
 
             if all(checks):
-                filter_by_accounts.append(account_md.name.lower())
+                filter_by_accounts.append(account_md.id)
 
         if len(filter_by_accounts) == 0:
             console.print(f'[bold red]No accounts found matching specified parameters[/]')
             sys.exit(0)
 
-    # transactions = store.load_transactions_from_sheets(filter_by_accounts=filter_by_accounts)
+    transactions = filter_transactions(transactions, filter_by_accounts)
 
     kwargs = {
         'dividend_tax_rate': args.dividend_rate,

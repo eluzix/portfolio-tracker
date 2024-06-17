@@ -148,3 +148,12 @@ def list_accounts(transactions):
     for transaction in transactions:
         accounts.add(transaction["account"])
     return accounts
+
+
+def filter_transactions(transactions: dict[str, list[Transaction]], account_ids: list[str]) -> dict[
+    str, list[Transaction]]:
+    if account_ids is None or len(account_ids) == 0:
+        return transactions
+
+    account_ids = set(account_ids)
+    return {account_id: transactions[account_id] for account_id in account_ids}

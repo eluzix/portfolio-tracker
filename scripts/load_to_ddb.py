@@ -1,3 +1,5 @@
+import sys
+sys.path.append('.')
 import hashlib
 
 import boto3
@@ -98,7 +100,7 @@ def test_load():
 
 if __name__ == '__main__':
     boto3.setup_default_session(profile_name='tracker')
-    test_load()
+    # test_load()
     # dump_accounts_metadata_to_ddb()
-    # dump_transactions_to_ddb()
+    dump_transactions_to_ddb()
     # clan_all_transactions()
