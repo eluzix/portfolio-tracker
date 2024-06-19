@@ -1,0 +1,9 @@
+[package]
+name = "tracker_types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+aws-config = { workspace = true }
+aws-sdk-dynamodb = { workspace = true }
+tokio = { workspace = true, features = ["full"] }

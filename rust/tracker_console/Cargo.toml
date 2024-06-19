@@ -1,0 +1,12 @@
+[package]
+name = "tracker_console"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tracker_types = { path = "../tracker_types" }
+tracker_analyzer = { path = "../tracker_analyzer" }
+tracker_storage = { path = "../tracker_storage", features = ["local_creds"] }
+aws-config = { workspace = true }
+aws-sdk-dynamodb = { workspace = true }
+tokio = { workspace = true, features = ["full"] }
