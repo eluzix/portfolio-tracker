@@ -1306,7 +1306,6 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "tokio",
- "tracker_types",
 ]
 
 [[package]]
@@ -1317,27 +1316,6 @@ dependencies = [
  "aws-sdk-dynamodb",
  "tokio",
  "tracker_analyzer",
- "tracker_storage",
- "tracker_types",
-]
-
-[[package]]
-name = "tracker_storage"
-version = "0.1.0"
-dependencies = [
- "aws-config",
- "aws-sdk-dynamodb",
- "tokio",
- "tracker_types",
-]
-
-[[package]]
-name = "tracker_types"
-version = "0.1.0"
-dependencies = [
- "aws-config",
- "aws-sdk-dynamodb",
- "tokio",
 ]
 
 [[package]]

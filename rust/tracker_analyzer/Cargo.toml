@@ -4,7 +4,10 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-tracker_types = { path = "../tracker_types" }
 aws-config = { workspace = true }
 aws-sdk-dynamodb = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+
+[features]
+default = ["local_creds"]
+local_creds = []

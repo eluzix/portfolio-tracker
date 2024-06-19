@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use tracker_types::transactions::Transaction;
+use crate::types::transactions::Transaction;
 
 pub fn transactions_by_account<'a>(transactions: &'a [Transaction]) -> HashMap<&'a str, Vec<&'a Transaction>> {
     let mut map: HashMap<&'a str, Vec<&'a Transaction>> = HashMap::new();

@@ -1,9 +1,7 @@
-use aws_sdk_dynamodb::operation::query::QueryOutput;
+use aws_sdk_dynamodb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
-use aws_sdk_dynamodb::{Error};
-use tracker_types::transactions::Transaction;
-use crate::ddb;
-
+use crate::store::ddb;
+use crate::types::transactions::Transaction;
 
 pub async fn load_user_data(uid: &str) -> Result<Vec<Transaction>, Error> {
     let client = ddb::get_client().await?;
@@ -27,8 +25,6 @@ pub async fn load_user_data(uid: &str) -> Result<Vec<Transaction>, Error> {
             let transaction = Transaction::from_dynamodb(item);
             transactions.push(transaction);
         }
-    } else {
-        return Err(Error::from("No items found"));
     }
 
     Ok(transactions)

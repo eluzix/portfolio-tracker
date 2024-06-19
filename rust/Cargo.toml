@@ -2,7 +2,7 @@
 
 members = [
     "tracker_analyzer",
-    "tracker_console", "tracker_storage", "tracker_types",
+    "tracker_console",
 ]
 
 [workspace.dependencies]
