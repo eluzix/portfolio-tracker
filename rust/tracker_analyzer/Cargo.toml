@@ -6,6 +6,7 @@ edition = "2021"
 [dependencies]
 aws-config = { workspace = true }
 aws-sdk-dynamodb = { workspace = true }
+rayon = "1.10.0"
 tokio = { workspace = true, features = ["full"] }
 
 [features]

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use aws_sdk_dynamodb::Error;
 use tracker_analyzer::helpers::transactions_by_account;
 use tracker_analyzer::portfolio_analyzer::analyze_transactions;
@@ -13,7 +14,7 @@ async fn main() -> Result<(), Error> {
     let account_transactions = transactions_by_account(&transactions);
     for (account_id, transactions) in account_transactions {
         println!("--------\nAccount: {}", account_id);
-        analyze_transactions(&transactions).unwrap();
+        analyze_transactions(&transactions, &HashMap::with_capacity(0)).unwrap();
     }
 
     Ok(())

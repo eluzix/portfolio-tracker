@@ -1,14 +1,20 @@
 use std::collections::HashMap;
 use aws_sdk_dynamodb::types::AttributeValue;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TransactionType {
     Buy,
     Sell,
     Dividend,
 }
 
-#[derive(Debug)]
+impl Default for TransactionType {
+    fn default() -> Self {
+        TransactionType::Buy
+    }
+}
+
+#[derive(Debug, Default, PartialEq)]
 pub struct Transaction {
     pub id: String,
     pub account_id: String,
