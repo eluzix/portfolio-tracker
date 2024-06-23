@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 use aws_sdk_dynamodb::Error;
-use tracker_analyzer::helpers::transactions_by_account;
+use rayon::prelude::*;
+
+use tracker_analyzer::helpers::{to_transactions_slice, transactions_by_account};
 use tracker_analyzer::portfolio_analyzer::analyze_transactions;
-use tracker_analyzer::store::{cache, market};
+use tracker_analyzer::store::market;
 use tracker_analyzer::store::user_data::load_user_data;
 
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-
     let prices = market::load_prices().await.unwrap();
     // println!("Prices: {:?}", prices.get("AAPL"));
 
@@ -17,11 +17,19 @@ async fn main() -> Result<(), Error> {
     println!("Found {} transactions", transactions.len());
 
     let account_transactions = transactions_by_account(&transactions);
-    for (account_id, transactions) in account_transactions {
+    let results = account_transactions.par_iter().map(|(account_id, transactions)| {
+        let portfolio_data = analyze_transactions(&transactions, &prices).unwrap();
+        (account_id, portfolio_data)
+    }).collect::<Vec<_>>();
+
+    for (account_id, portfolio_data) in results {
         println!("--------\nAccount: {}", account_id);
-        let portfolio_data  = analyze_transactions(&transactions, &prices).unwrap();
         println!("Portfolio: {:?}", portfolio_data);
     }
+
+    let all_portfolio_data = analyze_transactions(&to_transactions_slice(&transactions), &prices).unwrap();
+    println!("--------\nAll Accounts");
+    println!("Portfolio: {:?}", all_portfolio_data);
 
     Ok(())
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
-use chrono::{NaiveDate, Utc};
 
+use chrono::Utc;
 use rayon::prelude::*;
 
 use crate::helpers::extract_symbols;
@@ -10,6 +10,10 @@ use crate::types::transactions::{Transaction, TransactionType};
 
 pub fn analyze_transactions(transactions: &Vec<&Transaction>, price_table: &HashMap<String, SymbolPrice>) -> Option<AnalyzedPortfolio> {
     let mut portfolio = AnalyzedPortfolio::new();
+    if transactions.is_empty() {
+        return Some(portfolio);
+    }
+
     let all_symbols_set = extract_symbols(transactions);
     let today = Utc::now().date_naive();
     let days_since_inception = today.signed_duration_since(transactions.first().unwrap().naive_date()).num_days();
@@ -19,27 +23,34 @@ pub fn analyze_transactions(transactions: &Vec<&Transaction>, price_table: &Hash
         || (0.0, 0.0, 0.0, HashMap::new()),
         |(mut invested, mut withdrawn, mut weighted_cash_flows, mut symbols_value), transaction| {
             let symbol = &transaction.symbol;
-            let price = price_table.get(symbol).unwrap();
-            let transaction_date= transaction.naive_date();
-            let days_since_transaction = today.signed_duration_since(transaction_date).num_days();
-            weighted_cash_flows = (transaction.quantity as f64 * price.adj_close) * days_since_transaction as f64 / days_since_inception as f64;
 
-            match transaction.transaction_type {
-                TransactionType::Buy => {
-                    invested += transaction.quantity as f64 * transaction.pps;
+            if let Some(price) = price_table.get(symbol) {
+                let transaction_date = transaction.naive_date();
+                let days_since_transaction = today.signed_duration_since(transaction_date).num_days();
+                let transaction_cash_flow = (transaction.quantity as f64 * transaction.pps) * days_since_transaction as f64 / days_since_inception as f64;
+                // weighted_cash_flows = (transaction.quantity as f64 * price.adj_close) * days_since_transaction as f64 / days_since_inception as f64;
 
-                    let current_value = symbols_value.get(symbol).unwrap_or(&0.0) + transaction.quantity as f64 * price.adj_close;
-                    symbols_value.insert(symbol, current_value);
+                match transaction.transaction_type {
+                    TransactionType::Buy => {
+                        invested += transaction.quantity as f64 * transaction.pps;
+                        weighted_cash_flows += transaction_cash_flow;
+
+                        let current_value = symbols_value.get(symbol).unwrap_or(&0.0) + transaction.quantity as f64 * price.adj_close;
+                        symbols_value.insert(symbol, current_value);
+                    }
+                    TransactionType::Sell => {
+                        withdrawn += transaction.quantity as f64 * transaction.pps;
+                        weighted_cash_flows -= transaction_cash_flow;
+
+                        let current_value = symbols_value.get(symbol).unwrap_or(&0.0) - transaction.quantity as f64 * price.adj_close;
+                        symbols_value.insert(symbol, current_value);
+                    }
+                    TransactionType::Dividend => {}
                 }
-                TransactionType::Sell => {
-                    withdrawn += transaction.quantity as f64 * transaction.pps;
-                    weighted_cash_flows = -weighted_cash_flows;
-
-                    let current_value = symbols_value.get(symbol).unwrap_or(&0.0) - transaction.quantity as f64 * price.adj_close;
-                    symbols_value.insert(symbol, current_value);
-                }
-                TransactionType::Dividend => {}
+            } else {
+                println!("No price found for symbol: {}", symbol);
             }
+
             (invested, withdrawn, weighted_cash_flows, symbols_value)
         },
     ).reduce(
@@ -78,9 +89,21 @@ pub fn analyze_transactions(transactions: &Vec<&Transaction>, price_table: &Hash
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use crate::helpers::to_transactions_slice;
 
     use super::*;
+
+    fn default_price_table() -> HashMap<String, SymbolPrice> {
+        let mut price_table = HashMap::new();
+        price_table.insert("AAPL".to_string(), SymbolPrice {
+            symbol: "AAPL".to_string(),
+            adj_close: 100.0,
+        });
+        price_table
+    }
+
 
     #[test]
     fn empty_transactions_empty_analyzer() {
@@ -155,9 +178,118 @@ mod tests {
             },
         ];
 
-        let portfolio = analyze_transactions(&to_transactions_slice(transactions.as_slice()), &HashMap::with_capacity(0)).unwrap();
+        let portfolio = analyze_transactions(&to_transactions_slice(transactions.as_slice()), &default_price_table()).unwrap();
 
         assert_eq!(portfolio.total_invested, 600.0);
         assert_eq!(portfolio.total_withdrawn, 400.0);
+    }
+
+    #[test]
+    fn test_symbols_value() {
+        let mut rng = rand::thread_rng();
+
+        let transactions = vec![
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                date: "2023-01-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                date: "2023-02-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                date: "2023-03-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Sell,
+                quantity: rng.gen_range(5..10),
+                date: "2023-04-01".to_string(),
+                ..Default::default()
+            },
+        ];
+
+        let price: f64 = rng.gen_range(100.0..200.0);
+        let all_transactions_value: f64 = transactions.iter().map(|t| {
+            if t.transaction_type == TransactionType::Sell {
+                return 0.0 - t.quantity as f64 * price;
+            }
+
+            t.quantity as f64 * price
+        }).sum();
+
+        let mut price_table = HashMap::new();
+        price_table.insert("AAPL".to_string(), SymbolPrice {
+            symbol: "AAPL".to_string(),
+            adj_close: price,
+        });
+
+        let portfolio = analyze_transactions(&to_transactions_slice(transactions.as_slice()), &price_table).unwrap();
+
+        assert_eq!(portfolio.current_portfolio_value, all_transactions_value);
+    }
+
+
+    #[test]
+    fn test_yields() {
+        let mut rng = rand::thread_rng();
+        let today = Utc::now().date_naive();
+
+        let transactions = vec![
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                pps: 1.0,
+                date: (today - chrono::Duration::days(3 * 365)).format("%Y-%m-%d").to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                pps: 1.0,
+                date: (today - chrono::Duration::days(2 * 365)).format("%Y-%m-%d").to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: rng.gen_range(5..100),
+                pps: 1.0,
+                date: (today - chrono::Duration::days(100)).format("%Y-%m-%d").to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Sell,
+                quantity: rng.gen_range(5..10),
+                pps: 1.0,
+                date: (today - chrono::Duration::days(10)).format("%Y-%m-%d").to_string(),
+                ..Default::default()
+            },
+        ];
+
+        let price: f64 = rng.gen_range(100.0..200.0);
+
+        let mut price_table = HashMap::new();
+        price_table.insert("AAPL".to_string(), SymbolPrice {
+            symbol: "AAPL".to_string(),
+            adj_close: price,
+        });
+
+        let portfolio = analyze_transactions(&to_transactions_slice(transactions.as_slice()), &price_table).unwrap();
+
+        assert_eq!(portfolio.annualized_yield, 0.1);
     }
 }

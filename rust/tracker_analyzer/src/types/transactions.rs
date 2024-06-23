@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use aws_sdk_dynamodb::types::AttributeValue;
-use chrono::{NaiveDate, NaiveDateTime};
+use chrono::{NaiveDate};
 
 #[derive(Debug, PartialEq)]
 pub enum TransactionType {
@@ -15,7 +15,7 @@ impl Default for TransactionType {
     }
 }
 
-#[derive(Debug, Default, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Transaction {
     pub id: String,
     pub account_id: String,
@@ -55,5 +55,19 @@ impl Transaction {
 
     pub fn naive_date(&self) -> NaiveDate {
         NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap()
+    }
+}
+
+impl Default for Transaction {
+    fn default() -> Self {
+        Transaction {
+            id: "1".to_string(),
+            account_id: "1".to_string(),
+            symbol: "AAPL".to_string(),
+            date: "2024-06-23".to_string(),
+            transaction_type: TransactionType::Buy,
+            quantity: 0,
+            pps: 0.0,
+        }
     }
 }

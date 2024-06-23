@@ -8,9 +8,10 @@ aws-config = { workspace = true }
 aws-sdk-dynamodb = { workspace = true }
 serde_json.workspace = true
 once_cell = "1.19.0"
-rayon = "1.10.0"
+rayon = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 chrono.workspace = true
+rand = "0.8.5"
 
 [features]
 default = ["local_creds"]

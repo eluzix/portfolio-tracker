@@ -1,10 +1,10 @@
 use std::collections::HashMap;
-use tokio::sync::{MappedMutexGuard, Mutex, MutexGuard};
-use aws_sdk_dynamodb::types::AttributeValue;
 
+use aws_sdk_dynamodb::types::AttributeValue;
 use once_cell::sync::Lazy;
 use serde_json::Value;
-use tokio::task::JoinSet;
+use tokio::sync::Mutex;
+
 use crate::store::ddb::get_client;
 
 static CACHE: Lazy<Mutex<HashMap<String, Value>>> = Lazy::new(|| {

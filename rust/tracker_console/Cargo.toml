@@ -8,3 +8,4 @@ tracker_analyzer = { path = "../tracker_analyzer", features = ["local_creds"] }
 aws-config = { workspace = true }
 aws-sdk-dynamodb = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
+rayon = { workspace = true }
