@@ -1,8 +1,11 @@
 use aws_sdk_dynamodb::Error;
 use aws_sdk_dynamodb::types::AttributeValue;
+use crate::helpers::sort_transactions_by_date;
 use crate::store::ddb;
 use crate::types::transactions::Transaction;
 
+/// Load user data from the DynamoDB table
+/// and sort the transactions by date
 pub async fn load_user_data(uid: &str) -> Result<Vec<Transaction>, Error> {
     let client = ddb::get_client().await?;
     let results = client
@@ -27,5 +30,6 @@ pub async fn load_user_data(uid: &str) -> Result<Vec<Transaction>, Error> {
         }
     }
 
+    sort_transactions_by_date(&mut transactions);
     Ok(transactions)
 }

@@ -26,6 +26,10 @@ pub fn extract_symbols(transactions: &Vec<&Transaction>) -> HashSet<String> {
     transactions.iter().map(|t| t.symbol.clone()).collect::<HashSet<_>>()
 }
 
+pub fn sort_transactions_by_date(transactions: &mut Vec<Transaction>) {
+    transactions.sort_by(|a, b| a.date.cmp(&b.date));
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -87,5 +91,35 @@ mod tests {
         assert_eq!(result.len(), 2);
         assert!(result.contains("AAPL"));
         assert!(result.contains("GOOGL"));
+    }
+
+    #[test]
+    fn test_sort_transactions_by_date() {
+        let mut transactions = vec![
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                date: "2021-01-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                date: "2021-01-03".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                date: "2021-01-02".to_string(),
+                ..Default::default()
+            },
+        ];
+
+        sort_transactions_by_date(&mut transactions);
+
+        assert_eq!(transactions[0].date, "2021-01-01");
+        assert_eq!(transactions[1].date, "2021-01-02");
+        assert_eq!(transactions[2].date, "2021-01-03");
     }
 }
