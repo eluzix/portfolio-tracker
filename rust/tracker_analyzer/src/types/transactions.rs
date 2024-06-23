@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use aws_sdk_dynamodb::types::AttributeValue;
+use chrono::{NaiveDate, NaiveDateTime};
 
 #[derive(Debug, PartialEq)]
 pub enum TransactionType {
@@ -50,5 +51,9 @@ impl Transaction {
             quantity,
             pps,
         }
+    }
+
+    pub fn naive_date(&self) -> NaiveDate {
+        NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap()
     }
 }
