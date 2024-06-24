@@ -90,13 +90,13 @@ pub fn analyze_transactions(
 
     // todo: dividends
     let total_dividends = 0.0;
-    let portfolio_gain =
+    let portfolio_gain_value =
         (portfolio.current_portfolio_value + total_withdrawn + total_dividends) - total_invested;
-    portfolio.modified_dietz_yield = portfolio_gain / (total_invested + weighted_cash_flows);
+    portfolio.modified_dietz_yield = portfolio_gain_value / (total_invested + weighted_cash_flows);
 
     portfolio.portfolio_gain = match total_invested {
         0.0 => 0.0,
-        _ => portfolio_gain / total_invested,
+        _ => portfolio_gain_value / total_invested,
     };
 
     let years_since_start = days_since_inception as f64 / 365.0;
@@ -110,6 +110,7 @@ pub fn analyze_transactions(
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
     use rand::Rng;
 
     use crate::helpers::to_transactions_slice;
@@ -276,57 +277,41 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(portfolio.current_portfolio_value, all_transactions_value);
+        assert_eq!(format!("{:.5}", portfolio.current_portfolio_value), format!("{:.5}", all_transactions_value));
     }
 
     #[test]
     fn test_yields() {
         let mut rng = rand::thread_rng();
         let today = Utc::now().date_naive();
-        let first_transaction = today - chrono::Duration::days(3 * 365);
-
-        let transactions = vec![
-            Transaction {
-                symbol: "AAPL".to_string(),
-                transaction_type: TransactionType::Buy,
-                quantity: rng.gen_range(5..100),
-                pps: 1.0,
-                date: first_transaction.format("%Y-%m-%d").to_string(),
-                ..Default::default()
-            },
-            Transaction {
-                symbol: "AAPL".to_string(),
-                transaction_type: TransactionType::Buy,
-                quantity: rng.gen_range(5..100),
-                pps: 1.0,
-                date: (today - chrono::Duration::days(2 * 365))
-                    .format("%Y-%m-%d")
-                    .to_string(),
-                ..Default::default()
-            },
-            Transaction {
-                symbol: "AAPL".to_string(),
-                transaction_type: TransactionType::Buy,
-                quantity: rng.gen_range(5..100),
-                pps: 1.0,
-                date: (today - chrono::Duration::days(100))
-                    .format("%Y-%m-%d")
-                    .to_string(),
-                ..Default::default()
-            },
-            Transaction {
-                symbol: "AAPL".to_string(),
-                transaction_type: TransactionType::Sell,
-                quantity: rng.gen_range(5..10),
-                pps: 1.0,
-                date: (today - chrono::Duration::days(10))
-                    .format("%Y-%m-%d")
-                    .to_string(),
-                ..Default::default()
-            },
-        ];
-
         let price: f64 = rng.gen_range(100.0..200.0);
+
+        let num_of_transactions = 4;
+        let quantities: Vec<u32> = (0..num_of_transactions).map(|_| rng.gen_range(5..100)).collect();
+        let transaction_types = vec![
+            TransactionType::Buy,
+            TransactionType::Buy,
+            TransactionType::Buy,
+            TransactionType::Sell,
+        ];
+        let mut dates: Vec<NaiveDate> = (0..num_of_transactions)
+            .map(|i| today - chrono::Duration::days((i + 1) * 365))
+            .collect();
+        dates.reverse();
+
+        let first_transaction = dates.first().unwrap().clone();
+
+        let transactions: Vec<Transaction> = (0..num_of_transactions).map(|i| {
+            Transaction {
+                symbol: "AAPL".to_string(),
+                transaction_type: transaction_types[i as usize].clone(),
+                quantity: quantities[i as usize],
+                pps: 1.0,
+                date: dates[i as usize].format("%Y-%m-%d").to_string(),
+                ..Default::default()
+            }
+        }).collect();
+
         let days_since_inception = today.signed_duration_since(first_transaction).num_days();
         let years_since_inception = days_since_inception as f64 / 365.0;
         let current_portfolio_value: f64 = transactions
@@ -358,9 +343,30 @@ mod tests {
             })
             .sum();
         let total_dividends = 0.0;
-        let portfolio_gain: f64 =
+        let portfolio_gain_value: f64 =
             (current_portfolio_value + total_withdrawn + total_dividends) - total_invested;
+        let portfolio_gain = portfolio_gain_value / total_invested;
         let annualized_yield = ((1.0 + portfolio_gain).powf(1.0 / years_since_inception)) - 1.0;
+        let weighted_cash_flows: f64 = transactions
+            .iter()
+            .map(|t| {
+                let transaction_date = t.naive_date();
+                let days_since_transaction =
+                    today.signed_duration_since(transaction_date).num_days();
+                match t.transaction_type {
+                    TransactionType::Buy => {
+                        return t.quantity as f64 * t.pps * days_since_transaction as f64
+                            / days_since_inception as f64;
+                    }
+                    TransactionType::Sell => {
+                        return 0.0 - t.quantity as f64 * t.pps * days_since_transaction as f64
+                            / days_since_inception as f64;
+                    }
+                    TransactionType::Dividend => 0.0,
+                }
+            })
+            .sum();
+        let modified_dietz_yield: f64 = portfolio_gain_value / (total_invested + weighted_cash_flows);
 
         let mut price_table = HashMap::new();
         price_table.insert(
@@ -378,5 +384,6 @@ mod tests {
         .unwrap();
 
         assert_eq!(portfolio.annualized_yield, annualized_yield);
+        assert_eq!(portfolio.modified_dietz_yield, modified_dietz_yield);
     }
 }
