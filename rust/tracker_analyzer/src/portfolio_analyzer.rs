@@ -277,7 +277,10 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(format!("{:.5}", portfolio.current_portfolio_value), format!("{:.5}", all_transactions_value));
+        assert_eq!(
+            format!("{:.5}", portfolio.current_portfolio_value),
+            format!("{:.5}", all_transactions_value)
+        );
     }
 
     #[test]
@@ -287,7 +290,9 @@ mod tests {
         let price: f64 = rng.gen_range(100.0..200.0);
 
         let num_of_transactions = 4;
-        let quantities: Vec<u32> = (0..num_of_transactions).map(|_| rng.gen_range(5..100)).collect();
+        let quantities: Vec<u32> = (0..num_of_transactions)
+            .map(|_| rng.gen_range(5..100))
+            .collect();
         let transaction_types = vec![
             TransactionType::Buy,
             TransactionType::Buy,
@@ -301,16 +306,16 @@ mod tests {
 
         let first_transaction = dates.first().unwrap().clone();
 
-        let transactions: Vec<Transaction> = (0..num_of_transactions).map(|i| {
-            Transaction {
+        let transactions: Vec<Transaction> = (0..num_of_transactions)
+            .map(|i| Transaction {
                 symbol: "AAPL".to_string(),
                 transaction_type: transaction_types[i as usize].clone(),
                 quantity: quantities[i as usize],
                 pps: 1.0,
                 date: dates[i as usize].format("%Y-%m-%d").to_string(),
                 ..Default::default()
-            }
-        }).collect();
+            })
+            .collect();
 
         let days_since_inception = today.signed_duration_since(first_transaction).num_days();
         let years_since_inception = days_since_inception as f64 / 365.0;
@@ -359,14 +364,16 @@ mod tests {
                             / days_since_inception as f64;
                     }
                     TransactionType::Sell => {
-                        return 0.0 - t.quantity as f64 * t.pps * days_since_transaction as f64
-                            / days_since_inception as f64;
+                        return 0.0
+                            - t.quantity as f64 * t.pps * days_since_transaction as f64
+                                / days_since_inception as f64;
                     }
                     TransactionType::Dividend => 0.0,
                 }
             })
             .sum();
-        let modified_dietz_yield: f64 = portfolio_gain_value / (total_invested + weighted_cash_flows);
+        let modified_dietz_yield: f64 =
+            portfolio_gain_value / (total_invested + weighted_cash_flows);
 
         let mut price_table = HashMap::new();
         price_table.insert(
@@ -383,7 +390,13 @@ mod tests {
         )
         .unwrap();
 
-        assert_eq!(portfolio.annualized_yield, annualized_yield);
-        assert_eq!(portfolio.modified_dietz_yield, modified_dietz_yield);
+        assert_eq!(
+            format!("{:.5}", portfolio.annualized_yield),
+            format!("{:.5}", annualized_yield)
+        );
+        assert_eq!(
+            format!("{:.5}", portfolio.modified_dietz_yield),
+            format!("{:.5}", modified_dietz_yield)
+        );
     }
 }
