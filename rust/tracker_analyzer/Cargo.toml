@@ -12,7 +12,8 @@ rayon = { workspace = true }
 tokio = { workspace = true, features = ["full"] }
 chrono.workspace = true
 rand = "0.8.5"
+serde = { version = "1.0.203", features = ["derive"] }
 
 [features]
-default = ["local_creds"]
+default = []
 local_creds = []

@@ -1,11 +1,18 @@
 use std::collections::{HashMap, HashSet};
 
+use rayon::prelude::*;
+
+use crate::portfolio_analyzer::analyze_transactions;
+use crate::store::market;
+use crate::store::user_data::load_user_data;
+use crate::types::portfolio::AnalyzedPortfolio;
 use crate::types::transactions::Transaction;
+use crate::types::user_portfolio::UserPortfolio;
 
 pub fn to_transactions_slice(transactions: &[Transaction]) -> Vec<&Transaction> {
     let mut result: Vec<&Transaction> = Vec::with_capacity(transactions.len());
     for transaction in transactions.iter() {
-        result.push(&transaction);
+        result.push(transaction);
     }
     result
 }
@@ -15,18 +22,18 @@ pub fn transactions_by_account<'a>(transactions: &'a [Transaction]) -> HashMap<&
 
     for transaction in transactions {
         map.entry(&transaction.account_id)
-            .or_insert_with(Vec::new)
+            .or_default()
             .push(transaction);
     }
 
     map
 }
 
-pub fn extract_symbols(transactions: &Vec<&Transaction>) -> HashSet<String> {
+pub fn extract_symbols(transactions: &[&Transaction]) -> HashSet<String> {
     transactions.iter().map(|t| t.symbol.clone()).collect::<HashSet<_>>()
 }
 
-pub fn sort_transactions_by_date(transactions: &mut Vec<Transaction>) {
+pub fn sort_transactions_by_date(transactions: &mut [Transaction]) {
     transactions.sort_by(|a, b| a.date.cmp(&b.date));
 }
 
@@ -122,4 +129,27 @@ mod tests {
         assert_eq!(transactions[1].date, "2021-01-02");
         assert_eq!(transactions[2].date, "2021-01-03");
     }
+}
+
+pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
+    let prices = market::load_prices().await?;
+    let transactions = load_user_data(user_id).await.unwrap();
+
+    let account_transactions = transactions_by_account(&transactions);
+    let results = account_transactions.par_iter().map(|(account_id, transactions)| {
+        let portfolio_data = analyze_transactions(transactions, &prices).unwrap();
+        (account_id, portfolio_data)
+    }).collect::<Vec<_>>();
+
+    let mut results_map: HashMap<String, AnalyzedPortfolio> = HashMap::with_capacity(results.len());
+    for (account_id, portfolio_data) in results {
+        results_map.insert(account_id.to_string(), portfolio_data);
+    }
+
+    let all_portfolio_data = analyze_transactions(&to_transactions_slice(&transactions), &prices).unwrap();
+
+    Some(UserPortfolio {
+        accounts: results_map,
+        portfolio: all_portfolio_data,
+    })
 }

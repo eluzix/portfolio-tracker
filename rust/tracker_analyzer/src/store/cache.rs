@@ -29,7 +29,7 @@ pub async fn get(key: &str) -> Option<Value> {
 
     if let Some(item) = result.item {
         if let Some(AttributeValue::B(blob)) = item.get("value") {
-            if let Ok(json_str) = std::str::from_utf8(&blob.as_ref()) {
+            if let Ok(json_str) = std::str::from_utf8(blob.as_ref()) {
                 if let Ok(json) = serde_json::from_str(json_str) {
                     let mut cache_lock = CACHE.lock().await;
                     let json: Value = json;

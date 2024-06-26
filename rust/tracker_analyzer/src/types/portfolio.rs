@@ -1,6 +1,7 @@
 use std::collections::HashSet;
+use serde::{Deserialize, Serialize};
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyzedPortfolio {
     // stats and variables
     pub exchange_rate: f64,
@@ -42,9 +43,9 @@ impl AnalyzedPortfolio {
     }
 }
 
-#[cfg(test)]
 impl Default for AnalyzedPortfolio {
     fn default() -> Self {
         AnalyzedPortfolio::new()
     }
 }
+

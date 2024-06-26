@@ -2,17 +2,12 @@ use std::collections::HashMap;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{NaiveDate};
 
-#[derive(Debug, PartialEq, Clone, Copy)]
+#[derive(Debug, PartialEq, Clone, Copy, Default)]
 pub enum TransactionType {
+    #[default]
     Buy,
     Sell,
     Dividend,
-}
-
-impl Default for TransactionType {
-    fn default() -> Self {
-        TransactionType::Buy
-    }
 }
 
 #[derive(Debug, PartialEq)]

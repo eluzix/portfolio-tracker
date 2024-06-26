@@ -7,6 +7,7 @@
       <sourceFolder url="file://$MODULE_DIR$/rust/tracker_console/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rust/tracker_storage/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/rust/tracker_types/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/rust/tracker_api/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/rust/tracker_analyzer/target" />
       <excludeFolder url="file://$MODULE_DIR$/rust/tracker_console/target" />
       <excludeFolder url="file://$MODULE_DIR$/rust/target" />

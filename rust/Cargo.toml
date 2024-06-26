@@ -2,6 +2,7 @@
 
 members = [
     "tracker_analyzer",
+    "tracker_api",
     "tracker_console",
 ]
 
