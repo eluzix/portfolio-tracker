@@ -12,6 +12,7 @@ from tracker.portfolio_analysis import analyze_portfolio, filter_transactions
 
 install()
 USER_ID = '1'
+# api url https://45rvjkegn4.execute-api.us-east-1.amazonaws.com/default/tracker_api
 
 if __name__ == '__main__':
     boto3.setup_default_session(profile_name='tracker')

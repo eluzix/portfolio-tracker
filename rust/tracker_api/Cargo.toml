@@ -24,3 +24,14 @@ aws-sdk-dynamodb = { workspace = true }
 rayon = { workspace = true }
 serde_json = { workspace = true }
 
+[package.metadata.lambda.deploy]
+memory = 512                   # Function's memory
+timeout = 30                   # Function's execution timeout
+role = "arn:aws:iam::838643176316:role/tracker-api-role"         # Function's execution role
+#tracing = "active"             # Tracing mode
+#env_file = ".env.production"   # File to load environment variables from
+#env = { "VAR1" = "VAL1" }      # Additional environment variables
+#layers = [ "layer-full-arn" ]  # List of layers to deploy with your function
+#tags = { "team" = "lambda" }   # List of AWS resource tags for this function
+#s3_bucket = "deploy-bucket"    # S3 bucket to upload the Lambda function to
+#include = [ "README.md" ]
