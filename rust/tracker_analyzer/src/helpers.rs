@@ -5,6 +5,7 @@ use rayon::prelude::*;
 use crate::portfolio_analyzer::analyze_transactions;
 use crate::store::market;
 use crate::store::user_data::load_user_data;
+use crate::types::account::AccountMetadata;
 use crate::types::portfolio::AnalyzedPortfolio;
 use crate::types::transactions::Transaction;
 use crate::types::user_portfolio::UserPortfolio;
@@ -133,7 +134,9 @@ mod tests {
 
 pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
     let prices = market::load_prices().await?;
-    let transactions = load_user_data(user_id).await.unwrap();
+    let resp = load_user_data(user_id).await.unwrap();
+    let transactions = resp.0;
+    let accounts_metadata: HashMap<String, AccountMetadata> = resp.1.into_iter().map(|account| (account.id.clone(), account)).collect();
 
     let account_transactions = transactions_by_account(&transactions);
     let results = account_transactions.par_iter().map(|(account_id, transactions)| {
@@ -149,6 +152,7 @@ pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
     let all_portfolio_data = analyze_transactions(&to_transactions_slice(&transactions), &prices).unwrap();
 
     Some(UserPortfolio {
+        accounts_metadata,
         accounts: results_map,
         portfolio: all_portfolio_data,
     })

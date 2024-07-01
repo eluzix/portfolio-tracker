@@ -6,7 +6,8 @@ async fn main() -> Result<(), ()> {
     let portfolio = analyze_user_portfolio("1").await.unwrap();
 
     for (account_id, portfolio_data) in portfolio.accounts.iter() {
-        println!("--------\nAccount: {}", account_id);
+        let account_data = portfolio.accounts_metadata.get(account_id).unwrap();
+        println!("--------\nAccount: {}", account_data.name);
         println!("Portfolio: {:?}", portfolio_data);
     }
 
