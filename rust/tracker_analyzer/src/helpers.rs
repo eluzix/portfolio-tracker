@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 use rayon::prelude::*;
 
 use crate::portfolio_analyzer::analyze_transactions;
+use crate::store::cache::default_cache;
 use crate::store::market;
 use crate::store::user_data::load_user_data;
 use crate::types::account::AccountMetadata;
@@ -133,10 +134,16 @@ mod tests {
 }
 
 pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
-    let prices = market::load_prices().await?;
+    let cache = default_cache();
     let resp = load_user_data(user_id).await.unwrap();
-    let transactions = resp.0;
     let accounts_metadata: HashMap<String, AccountMetadata> = resp.1.into_iter().map(|account| (account.id.clone(), account)).collect();
+    let transactions = resp.0;
+    let transactions_slice = to_transactions_slice(&transactions);
+
+    let symbols = extract_symbols(&transactions_slice);
+    let all_symbols = symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>();
+    let prices = market::load_prices(&*cache, all_symbols.as_slice()).await?;
+
 
     let account_transactions = transactions_by_account(&transactions);
     let results = account_transactions.par_iter().map(|(account_id, transactions)| {
@@ -149,7 +156,7 @@ pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
         results_map.insert(account_id.to_string(), portfolio_data);
     }
 
-    let all_portfolio_data = analyze_transactions(&to_transactions_slice(&transactions), &prices).unwrap();
+    let all_portfolio_data = analyze_transactions(&transactions_slice, &prices).unwrap();
 
     Some(UserPortfolio {
         accounts_metadata,

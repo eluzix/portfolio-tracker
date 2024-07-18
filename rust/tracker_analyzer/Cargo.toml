@@ -13,7 +13,14 @@ tokio = { workspace = true, features = ["full"] }
 chrono.workspace = true
 rand = "0.8.5"
 serde = { version = "1.0.203", features = ["derive"] }
+config = { version = "0.14.0", features = ["json"] }
+reqwest = { version = "0.12.5", features = ["json"] }
+
+[dev-dependencies]
+#mockito = "1.4.0"
+
 
 [features]
 default = []
 local_creds = []
+
