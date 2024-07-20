@@ -10,7 +10,7 @@ use serde_json::Value;
 
 use crate::store::cache::Cache;
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, Deserialize, Serialize, Default)]
 pub struct SymbolPrice {
     pub symbol: String,
     pub adj_close: f64,
@@ -33,37 +33,50 @@ pub trait PriceFetcher {
 }
 
 #[derive(Debug, Deserialize)]
-struct MarketStackResponse {
+pub struct MarketStackResponse {
     data: Vec<SymbolPrice>,
+    // pagination: HashMap<String, u32>,
 }
 
 #[cfg(not(test))]
 impl PriceFetcher for PricesClient {
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
         let key: String = tracker_config::get("marketstack_key").unwrap();
-        println!("KEY >>>>>> {:?}", key);
+
         let client = reqwest::Client::new();
-        let res: MarketStackResponse = client
+
+        let res: String = client
             .get("https://api.marketstack.com/v1/eod/latest")
             .query(&[("symbols", symbols.join(",")), ("access_key", key)])
             .send()
             .await
             .unwrap()
-            .json::<MarketStackResponse>()
+            .text()
             .await
             .unwrap();
 
-        // println!("Response: {:?}", res);
+        let res = res.replace(",[]", "");
 
-        //let data:serde_json::Array = res.get("data").unwrap();
-        //println!("DATA: {:?}", data);
-        let mut ret: HashMap<String, SymbolPrice> = HashMap::with_capacity(res.data.len());
-        for price in res.data {
-            ret.insert(price.symbol.clone(), price);
+        let res = serde_json::from_str::<MarketStackResponse>(&res);
+
+        match res {
+            Ok(js) => {
+                let mut ret: HashMap<String, SymbolPrice> = HashMap::with_capacity(js.data.len());
+                for price in js.data {
+                    ret.insert(price.symbol.clone(), price);
+                }
+
+                Some(ret)
+            }
+
+            Err(err) => {
+                println!(
+                    "[fetch_prices] Error loading data from marketstack, error: {:?}",
+                    err
+                );
+                None
+            }
         }
-        // println!("RETURN: {:?}", ret);
-
-        Some(ret)
     }
 }
 
@@ -100,14 +113,17 @@ pub async fn load_prices<C: Cache + Send + Sync>(
     let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
     println!("Fetching prices from the market API: {:?}", missing_symbols);
 
+    let existing_size = prices.len();
     let fetched_prices = PricesClient::fetch_prices(&missing_symbols).await;
     // println!(">>>> {:?}", fetched_prices);
     if let Some(price_map) = fetched_prices {
         prices.extend(price_map);
     }
 
-    let s: String = serde_json::to_string(&prices).unwrap();
-    cache.set("prices", s, 60 * 60 * 12).await;
+    if prices.len() > existing_size {
+        let s: String = serde_json::to_string(&prices).unwrap();
+        cache.set("prices", s, 60 * 60 * 12).await;
+    }
 
     Some(prices)
 }

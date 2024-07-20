@@ -2525,6 +2525,9 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "rayon",
+ "reqwest",
+ "serde",
+ "serde_json",
  "tokio",
  "tracker_analyzer",
 ]

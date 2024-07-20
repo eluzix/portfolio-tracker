@@ -6,7 +6,7 @@ use aws_config::imds::client::error::ErrorResponse;
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::{Datelike, Duration, NaiveDate};
 use once_cell::sync::Lazy;
-use serde_json::Value;
+use serde_json::{json, Value};
 use tokio::sync::Mutex;
 
 use crate::store::ddb::get_client;
@@ -48,19 +48,58 @@ impl Cache for DynamoCache {
             .unwrap();
 
         if let Some(item) = result.item {
-            if let Some(AttributeValue::B(blob)) = item.get("value") {
-                if let Ok(json_str) = std::str::from_utf8(blob.as_ref()) {
-                    if let Ok(json) = serde_json::from_str(json_str) {
-                        let mut cache_lock = self.cache.lock().await;
-                        let json: Value = json;
-                        cache_lock.insert(key.to_string(), json.clone());
-                        return Some(json);
+            let now = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
+
+            println!("Found item: {:?}, NOW ==> {}", item, now);
+
+            if let Some(AttributeValue::N(ttl)) = item.get("ttl") {
+                if now > ttl.as_str().parse::<u64>().unwrap() {
+                    return None;
+                }
+            }
+
+            let val: Option<_> = match item.get("value") {
+                Some(AttributeValue::B(blob)) => {
+                    if let Ok(json_str) = std::str::from_utf8(blob.as_ref()) {
+                        Some(json_str)
+                    } else {
+                        None
                     }
+                }
+
+                Some(AttributeValue::S(s)) => Some(s.as_str()),
+
+                _ => None,
+            };
+
+            if let Some(json_str) = val {
+                if let Ok(json) = serde_json::from_str(json_str) {
+                    let mut cache_lock = self.cache.lock().await;
+                    let json: Value = json;
+                    cache_lock.insert(key.to_string(), json.clone());
+                    return Some(json);
                 }
             }
         }
 
         None
+
+        //     if let Some(AttributeValue::B(blob)) = item.get("value") {
+        //         if let Ok(json_str) = std::str::from_utf8(blob.as_ref()) {
+        //             if let Ok(json) = serde_json::from_str(json_str) {
+        //                 let mut cache_lock = self.cache.lock().await;
+        //                 let json: Value = json;
+        //                 cache_lock.insert(key.to_string(), json.clone());
+        //                 return Some(json);
+        //             }
+        //         }
+        //     }
+        // }
+
+        // None
     }
 
     async fn set(&self, key: &str, value: String, ttl: u64) {
@@ -71,6 +110,8 @@ impl Cache for DynamoCache {
             .unwrap()
             .as_secs()
             + ttl;
+
+        println!("SETTING item {:?} with ttl ====>>> {}", value, ttl);
 
         let res = client
             .put_item()
