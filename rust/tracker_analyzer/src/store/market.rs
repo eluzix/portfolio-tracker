@@ -25,9 +25,9 @@ impl SymbolPrice {
     }
 }
 
-pub struct PricesClient;
+pub struct MarketDataClient;
 
-pub trait PriceFetcher {
+pub trait MarketDataFetcher {
     #![allow(async_fn_in_trait)]
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>>;
 }
@@ -39,7 +39,7 @@ pub struct MarketStackResponse {
 }
 
 #[cfg(not(test))]
-impl PriceFetcher for PricesClient {
+impl MarketDataFetcher for MarketDataClient {
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
         let key: String = tracker_config::get("marketstack_key").unwrap();
 
@@ -81,7 +81,7 @@ impl PriceFetcher for PricesClient {
 }
 
 #[cfg(test)]
-impl PriceFetcher for PricesClient {
+impl MarketDataFetcher for MarketDataClient {
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
         None
     }
@@ -114,7 +114,7 @@ pub async fn load_prices<C: Cache + Send + Sync>(
     println!("Fetching prices from the market API: {:?}", missing_symbols);
 
     let existing_size = prices.len();
-    let fetched_prices = PricesClient::fetch_prices(&missing_symbols).await;
+    let fetched_prices = MarketDataClient::fetch_prices(&missing_symbols).await;
     // println!(">>>> {:?}", fetched_prices);
     if let Some(price_map) = fetched_prices {
         prices.extend(price_map);
