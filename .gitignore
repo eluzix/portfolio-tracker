@@ -14,5 +14,9 @@ secrets.json
 config.json
 *.iml
 .idea/
+.DS_Store
+credentials.json
+node_modules/
+cache/
 
 target/

@@ -45,6 +45,7 @@ def dump_transactions_to_ddb():
             print(f'Account not found for {transaction["account"]}')
             continue
 
+        transaction['symbol'] = transaction['symbol'].replace('.', '-')
         # transaction['id'] = utils.generate_id()
         transaction['account_id'] = account
         transaction_id = hashlib.sha224(

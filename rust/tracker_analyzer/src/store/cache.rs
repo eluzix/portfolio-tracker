@@ -53,7 +53,7 @@ impl Cache for DynamoCache {
                 .unwrap()
                 .as_secs();
 
-            println!("Found item: {:?}, NOW ==> {}", item, now);
+            // println!("Found item: {:?}, NOW ==> {}", item, now);
 
             if let Some(AttributeValue::N(ttl)) = item.get("ttl") {
                 if now > ttl.as_str().parse::<u64>().unwrap() {
@@ -111,7 +111,7 @@ impl Cache for DynamoCache {
             .as_secs()
             + ttl;
 
-        println!("SETTING item {:?} with ttl ====>>> {}", value, ttl);
+        // println!("SETTING item {:?} with ttl ====>>> {}", value, ttl);
 
         let res = client
             .put_item()
