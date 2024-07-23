@@ -1,8 +1,13 @@
-use crate::store::tracker_config;
+use crate::{
+    store::tracker_config,
+    types::transactions::{self, Transaction},
+};
+use aws_sdk_dynamodb::config::IntoShared;
 use serde::{Deserialize, Serialize};
 use std::{
     collections::{HashMap, HashSet},
     fmt::Display,
+    ops::DivAssign,
     str::FromStr,
 };
 
@@ -126,6 +131,38 @@ pub async fn load_prices<C: Cache + Send + Sync>(
     }
 
     Some(prices)
+}
+
+pub async fn load_dividends<C: Cache + Send + Sync>(
+    cache: &C,
+    symbols: &[&str],
+) -> Option<HashMap<String, Vec<Transaction>>> {
+    let mut dividends: HashMap<String, Vec<Transaction>> = HashMap::with_capacity(symbols.len());
+    let cached_dividends = cache.get("dividends").await;
+    let mut missing_symbols: HashSet<String> = symbols.iter().map(|s| s.to_string()).collect();
+
+    if let Some(cached_dividends) = cached_dividends {
+        for (symbol, transactions) in cached_dividends.as_object().unwrap() {
+            missing_symbols.remove(symbol);
+            let div_list = transactions
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|tr| Transaction::from(tr))
+                .collect();
+            dividends.insert(symbol.clone(), div_list);
+        }
+
+        if missing_symbols.is_empty() {
+            return Some(dividends);
+        }
+    }
+
+    if missing_symbols.is_empty() {
+        return Some(dividends);
+    }
+
+    None
 }
 
 #[cfg(test)]

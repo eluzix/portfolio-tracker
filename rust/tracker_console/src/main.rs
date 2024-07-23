@@ -1,6 +1,6 @@
 use serde_json;
 use tracker_analyzer::helpers::analyze_user_portfolio;
-use tracker_analyzer::store::cache::default_cache;
+use tracker_analyzer::store::cache::{self, default_cache};
 use tracker_analyzer::store::market::MarketStackResponse;
 use tracker_analyzer::store::{market, tracker_config};
 
@@ -60,11 +60,19 @@ async fn test_market() {
     println!(">>>>>>>>>>>> {:?}", js);
 }
 
+async fn test_dividends() {
+    let symbols = ["AAPL", "BRK-B"];
+    let cache = default_cache();
+    let d = market::load_dividends(&*cache.clone(), &symbols).await;
+    println!(">>>>>>>> dividends: {:?}", d);
+}
+
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    print_all().await;
+    // print_all().await;
     // test_price().await;
     // test_market().await;
+    test_dividends().await;
     Ok(())
 }

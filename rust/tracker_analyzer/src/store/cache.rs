@@ -155,7 +155,5 @@ impl Cache for MockedCache {
         async move { self.cache.get(key).cloned() }
     }
 
-    fn set(&self, key: &str, value: String, ttl: u64) -> impl std::future::Future<Output = ()> {
-        ()
-    }
+    async fn set(&self, key: &str, value: String, ttl: u64) {}
 }
