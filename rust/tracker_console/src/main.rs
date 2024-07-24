@@ -1,3 +1,4 @@
+use serde::Deserialize;
 use serde_json;
 use tracker_analyzer::helpers::analyze_user_portfolio;
 use tracker_analyzer::store::cache::{self, default_cache};
@@ -62,6 +63,7 @@ async fn test_market() {
 
 async fn test_dividends() {
     let symbols = ["AAPL", "BRK-B"];
+
     let cache = default_cache();
     let d = market::load_dividends(&*cache.clone(), &symbols).await;
     println!(">>>>>>>> dividends: {:?}", d);

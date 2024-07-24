@@ -1,11 +1,11 @@
 use aws_sdk_dynamodb::types::AttributeValue;
 use chrono::NaiveDate;
 use core::panic;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::collections::HashMap;
 
-#[derive(Debug, PartialEq, Clone, Copy, Default, Deserialize)]
+#[derive(Debug, PartialEq, Clone, Copy, Default, Deserialize, Serialize)]
 pub enum TransactionType {
     #[default]
     Buy,
@@ -24,7 +24,7 @@ impl From<&str> for TransactionType {
     }
 }
 
-#[derive(Debug, PartialEq, Deserialize)]
+#[derive(Debug, PartialEq, Deserialize, Serialize)]
 pub struct Transaction {
     pub id: String,
     pub account_id: String,

@@ -44,6 +44,19 @@ pub struct MarketStackResponse {
     // pagination: HashMap<String, u32>,
 }
 
+#[derive(Debug, Deserialize)]
+pub struct MarketDividend {
+    date: String,
+    dividend: f64,
+    symbol: String, // pagination: HashMap<String, u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MarketDividendsResponse {
+    data: Vec<MarketDividend>,
+    // pagination: HashMap<String, u32>,
+}
+
 #[cfg(not(test))]
 impl MarketDataFetcher for MarketDataClient {
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
@@ -86,6 +99,43 @@ impl MarketDataFetcher for MarketDataClient {
     }
 
     async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>> {
+        let key: String = tracker_config::get("marketstack_key").unwrap();
+        let client = reqwest::Client::new();
+        let res = client
+            .get("https://api.marketstack.com/v1/dividends")
+            .query(&[
+                ("symbols", symbols.join(",")),
+                ("access_key", key),
+                ("limit", "1000".to_string()),
+            ])
+            .send()
+            .await
+            .unwrap()
+            .json::<MarketDividendsResponse>()
+            .await;
+
+        if let Ok(dividend_response) = res {
+            let mut res: HashMap<String, Vec<Transaction>> =
+                HashMap::with_capacity(dividend_response.data.len());
+
+            for div in dividend_response.data.iter() {
+                let symbol_dividends = res
+                    .entry(div.symbol.clone())
+                    .or_insert(Vec::<Transaction>::new());
+                symbol_dividends.push(Transaction {
+                    id: "".to_string(),
+                    account_id: "".to_string(),
+                    symbol: div.symbol.clone(),
+                    date: div.date.clone(),
+                    transaction_type: transactions::TransactionType::Dividend,
+                    quantity: 0,
+                    pps: div.dividend,
+                });
+            }
+
+            return Some(res);
+        }
+
         None
     }
 }
@@ -171,7 +221,20 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
         return Some(dividends);
     }
 
-    None
+    let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
+    println!(
+        "!!!!!!!!! >>>> Going to network with: {:?}",
+        missing_symbols
+    );
+    let market_dividend = MarketDataClient::fetch_dividends(&missing_symbols).await;
+    if let Some(market_dividend) = market_dividend {
+        dividends.extend(market_dividend);
+    }
+
+    let s: String = serde_json::to_string(&dividends).unwrap();
+    cache.set("dividends", s, 60 * 60 * 24 * 3).await;
+
+    Some(dividends)
 }
 
 #[cfg(test)]
