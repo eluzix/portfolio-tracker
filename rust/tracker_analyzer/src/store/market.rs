@@ -35,6 +35,7 @@ pub struct MarketDataClient;
 pub trait MarketDataFetcher {
     #![allow(async_fn_in_trait)]
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>>;
+    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>>;
 }
 
 #[derive(Debug, Deserialize)]
@@ -83,11 +84,19 @@ impl MarketDataFetcher for MarketDataClient {
             }
         }
     }
+
+    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>> {
+        None
+    }
 }
 
 #[cfg(test)]
 impl MarketDataFetcher for MarketDataClient {
     async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
+        None
+    }
+
+    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>> {
         None
     }
 }

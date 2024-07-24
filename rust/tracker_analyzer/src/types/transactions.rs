@@ -15,7 +15,6 @@ pub enum TransactionType {
 
 impl From<&str> for TransactionType {
     fn from(value: &str) -> Self {
-        println!(">>>>>>>>>>>>>>>>>>>. type: {}", value == "\"dividend\"");
         match value {
             "buy" => TransactionType::Buy,
             "sell" => TransactionType::Sell,
