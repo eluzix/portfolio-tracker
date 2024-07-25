@@ -1,15 +1,9 @@
 use crate::{
     store::tracker_config,
-    types::transactions::{self, Transaction},
+    types::transactions::{Transaction, TransactionType},
 };
-use aws_sdk_dynamodb::config::IntoShared;
 use serde::{Deserialize, Serialize};
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Display,
-    ops::DivAssign,
-    str::FromStr,
-};
+use std::collections::{HashMap, HashSet};
 
 use serde_json::Value;
 
@@ -34,8 +28,8 @@ pub struct MarketDataClient;
 
 pub trait MarketDataFetcher {
     #![allow(async_fn_in_trait)]
-    async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>>;
-    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>>;
+    async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>>;
+    async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>>;
 }
 
 #[derive(Debug, Deserialize)]
@@ -59,7 +53,7 @@ pub struct MarketDividendsResponse {
 
 #[cfg(not(test))]
 impl MarketDataFetcher for MarketDataClient {
-    async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
+    async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>> {
         let key: String = tracker_config::get("marketstack_key").unwrap();
 
         let client = reqwest::Client::new();
@@ -98,7 +92,7 @@ impl MarketDataFetcher for MarketDataClient {
         }
     }
 
-    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>> {
+    async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
         let key: String = tracker_config::get("marketstack_key").unwrap();
         let client = reqwest::Client::new();
         let res = client
@@ -127,7 +121,7 @@ impl MarketDataFetcher for MarketDataClient {
                     account_id: "".to_string(),
                     symbol: div.symbol.clone(),
                     date: div.date.clone(),
-                    transaction_type: transactions::TransactionType::Dividend,
+                    transaction_type: TransactionType::Dividend,
                     quantity: 0,
                     pps: div.dividend,
                 });
@@ -142,11 +136,11 @@ impl MarketDataFetcher for MarketDataClient {
 
 #[cfg(test)]
 impl MarketDataFetcher for MarketDataClient {
-    async fn fetch_prices(symbols: &Vec<String>) -> Option<HashMap<String, SymbolPrice>> {
+    async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>> {
         None
     }
 
-    async fn fetch_dividends(symbols: &Vec<String>) -> Option<HashMap<String, Vec<Transaction>>> {
+    async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
         None
     }
 }
@@ -223,7 +217,7 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
 
     let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
     println!(
-        "!!!!!!!!! >>>> Going to network with: {:?}",
+        "[fetch_dividends] >>>> Going to network with: {:?}",
         missing_symbols
     );
     let market_dividend = MarketDataClient::fetch_dividends(&missing_symbols).await;

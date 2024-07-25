@@ -9,7 +9,7 @@ use crate::types::portfolio::AnalyzedPortfolio;
 use crate::types::transactions::{Transaction, TransactionType};
 
 pub fn analyze_transactions(
-    transactions: &Vec<&Transaction>,
+    transactions: &Vec<Transaction>,
     price_table: &HashMap<String, SymbolPrice>,
 ) -> Option<AnalyzedPortfolio> {
     let mut portfolio = AnalyzedPortfolio::new();
@@ -158,11 +158,7 @@ mod tests {
             },
         ];
 
-        let portfolio = analyze_transactions(
-            &to_transactions_slice(transactions.as_slice()),
-            &HashMap::with_capacity(0),
-        )
-        .unwrap();
+        let portfolio = analyze_transactions(&transactions, &HashMap::with_capacity(0)).unwrap();
 
         assert_eq!(portfolio.symbols.len(), 1);
         assert!(portfolio.symbols.contains("AAPL"));
@@ -205,11 +201,7 @@ mod tests {
             },
         ];
 
-        let portfolio = analyze_transactions(
-            &to_transactions_slice(transactions.as_slice()),
-            &default_price_table(),
-        )
-        .unwrap();
+        let portfolio = analyze_transactions(&transactions, &default_price_table()).unwrap();
 
         assert_eq!(portfolio.total_invested, 600.0);
         assert_eq!(portfolio.total_withdrawn, 400.0);
@@ -271,11 +263,7 @@ mod tests {
             },
         );
 
-        let portfolio = analyze_transactions(
-            &to_transactions_slice(transactions.as_slice()),
-            &price_table,
-        )
-        .unwrap();
+        let portfolio = analyze_transactions(&transactions, &price_table).unwrap();
 
         assert_eq!(
             format!("{:.5}", portfolio.current_portfolio_value),
@@ -384,11 +372,7 @@ mod tests {
             },
         );
 
-        let portfolio = analyze_transactions(
-            &to_transactions_slice(transactions.as_slice()),
-            &price_table,
-        )
-        .unwrap();
+        let portfolio = analyze_transactions(&transactions, &price_table).unwrap();
 
         assert_eq!(
             format!("{:.5}", portfolio.annualized_yield),

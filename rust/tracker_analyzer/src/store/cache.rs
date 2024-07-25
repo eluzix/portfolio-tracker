@@ -1,12 +1,10 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::SystemTime;
-use std::{collections::HashMap, hash::Hash};
 
-use aws_config::imds::client::error::ErrorResponse;
 use aws_sdk_dynamodb::types::AttributeValue;
-use chrono::{Datelike, Duration, NaiveDate};
 use once_cell::sync::Lazy;
-use serde_json::{json, Value};
+use serde_json::Value;
 use tokio::sync::Mutex;
 
 use crate::store::ddb::get_client;
@@ -16,6 +14,7 @@ pub trait Cache {
     fn set(&self, key: &str, value: String, ttl: u64) -> impl std::future::Future<Output = ()>;
 }
 
+#[derive(Default)]
 pub struct DynamoCache {
     cache: Mutex<HashMap<String, Value>>,
 }
@@ -48,10 +47,10 @@ impl Cache for DynamoCache {
             .unwrap();
 
         if let Some(item) = result.item {
-            let now = SystemTime::now()
-                .duration_since(SystemTime::UNIX_EPOCH)
-                .unwrap()
-                .as_secs();
+            // let now = SystemTime::now()
+            //     .duration_since(SystemTime::UNIX_EPOCH)
+            //     .unwrap()
+            //     .as_secs();
 
             // println!("Found item: {:?}, NOW ==> {}", item, now);
 

@@ -24,7 +24,7 @@ impl From<&str> for TransactionType {
     }
 }
 
-#[derive(Debug, PartialEq, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Transaction {
     pub id: String,
     pub account_id: String,
@@ -78,8 +78,6 @@ impl From<&Value> for Transaction {
         match Transaction::deserialize(value) {
             Ok(t) => t,
             Err(_) => {
-                let mut t = Transaction::default();
-
                 let id = value.get("id").unwrap();
                 let id = match id {
                     Value::Null => "".to_string(),

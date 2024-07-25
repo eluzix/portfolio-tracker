@@ -72,9 +72,9 @@ async fn test_dividends() {
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    // print_all().await;
+    print_all().await;
     // test_price().await;
     // test_market().await;
-    test_dividends().await;
+    // test_dividends().await;
     Ok(())
 }
