@@ -23,80 +23,80 @@ pub fn analyze_transactions(
         .signed_duration_since(transactions.first().unwrap().naive_date())
         .num_days();
 
-    let (total_invested, total_withdrawn, weighted_cash_flows, symbols_value) = transactions
-        .par_iter()
-        .fold(
-            || (0.0, 0.0, 0.0, HashMap::new()),
-            |(mut invested, mut withdrawn, mut weighted_cash_flows, mut symbols_value),
-             transaction| {
-                let symbol = &transaction.symbol;
+    let mut total_invested: Vec<f64> = Vec::with_capacity(transactions.len());
+    let mut total_withdrawn: Vec<f64> = Vec::with_capacity(transactions.len());
+    let mut total_dividends: Vec<f64> = Vec::with_capacity(transactions.len());
+    let mut weighted_cash_flows: Vec<f64> = Vec::with_capacity(transactions.len());
+    let mut symbols_values: HashMap<&String, f64> = HashMap::with_capacity(all_symbols_set.len());
+    let mut symbols_count: HashMap<&String, f64> = HashMap::with_capacity(all_symbols_set.len());
 
-                if let Some(price) = price_table.get(symbol) {
-                    let transaction_date = transaction.naive_date();
-                    let days_since_transaction =
-                        today.signed_duration_since(transaction_date).num_days();
-                    let transaction_cash_flow = (transaction.quantity as f64 * transaction.pps)
-                        * days_since_transaction as f64
-                        / days_since_inception as f64;
-                    // weighted_cash_flows = (transaction.quantity as f64 * price.adj_close) * days_since_transaction as f64 / days_since_inception as f64;
+    transactions.iter().for_each(|transaction| {
+        let symbol = &transaction.symbol;
+        if let Some(price) = price_table.get(symbol) {
+            let transaction_date = transaction.naive_date();
+            let days_since_transaction = today.signed_duration_since(transaction_date).num_days();
+            let transaction_cash_flow = (transaction.quantity as f64 * transaction.pps)
+                * days_since_transaction as f64
+                / days_since_inception as f64;
+            // weighted_cash_flows = (transaction.quantity as f64 * price.adj_close) * days_since_transaction as f64 / days_since_inception as f64;
 
-                    match transaction.transaction_type {
-                        TransactionType::Buy => {
-                            invested += transaction.quantity as f64 * transaction.pps;
-                            weighted_cash_flows += transaction_cash_flow;
+            match transaction.transaction_type {
+                TransactionType::Buy => {
+                    total_invested.push(transaction.quantity as f64 * transaction.pps);
+                    weighted_cash_flows.push(transaction_cash_flow);
 
-                            let current_value = symbols_value.get(symbol).unwrap_or(&0.0)
-                                + transaction.quantity as f64 * price.adj_close;
-                            symbols_value.insert(symbol, current_value);
-                        }
-                        TransactionType::Sell => {
-                            withdrawn += transaction.quantity as f64 * transaction.pps;
-                            weighted_cash_flows -= transaction_cash_flow;
+                    let current_value = symbols_values.get(symbol).unwrap_or(&0.0)
+                        + transaction.quantity as f64 * price.adj_close;
+                    symbols_values.insert(symbol, current_value);
 
-                            let current_value = symbols_value.get(symbol).unwrap_or(&0.0)
-                                - transaction.quantity as f64 * price.adj_close;
-                            symbols_value.insert(symbol, current_value);
-                        }
-                        TransactionType::Dividend => {}
-                    }
-                } else {
-                    println!("No price found for symbol: {}", symbol);
+                    let count =
+                        symbols_count.get(&symbol).unwrap_or(&0.0) + transaction.quantity as f64;
+                    symbols_count.insert(symbol, count);
                 }
+                TransactionType::Sell => {
+                    total_withdrawn.push(transaction.quantity as f64 * transaction.pps);
+                    weighted_cash_flows.push(-transaction_cash_flow);
 
-                (invested, withdrawn, weighted_cash_flows, symbols_value)
-            },
-        )
-        .reduce(
-            || (0.0, 0.0, 0.0, HashMap::new()),
-            |(invested1, withdrawn1, weighted_cash_flows1, symbols_value1),
-             (invested2, withdrawn2, weighted_cash_flows2, symbols_value2)| {
-                let mut combined_symbols_value = symbols_value1;
-                for (symbol, value) in symbols_value2 {
-                    *combined_symbols_value.entry(symbol).or_insert(0.0) += value;
+                    let current_value = symbols_values.get(symbol).unwrap_or(&0.0)
+                        - transaction.quantity as f64 * price.adj_close;
+                    symbols_values.insert(symbol, current_value);
+
+                    let count =
+                        symbols_count.get(&symbol).unwrap_or(&0.0) - transaction.quantity as f64;
+                    symbols_count.insert(symbol, count);
                 }
+                TransactionType::Dividend => {
+                    let current_value = symbols_values.get(symbol).unwrap_or(&0.0)
+                        - transaction.quantity as f64 * price.adj_close;
+                    symbols_values.insert(symbol, current_value);
 
-                (
-                    invested1 + invested2,
-                    withdrawn1 + withdrawn2,
-                    weighted_cash_flows1 + weighted_cash_flows2,
-                    combined_symbols_value,
-                )
-            },
-        );
+                    let count = symbols_count.get(&symbol).unwrap_or(&0.0);
+                    let tr_value = transaction.pps * count;
+                    total_dividends.push(tr_value);
+                }
+            }
+        } else {
+            println!("No price found for symbol: {}", symbol);
+        }
+    });
 
-    portfolio.current_portfolio_value = symbols_value.values().sum();
-    portfolio.total_invested = total_invested;
-    portfolio.total_withdrawn = total_withdrawn;
+    portfolio.current_portfolio_value = symbols_values.values().sum();
+    portfolio.total_invested = total_invested.iter().sum();
+    portfolio.total_withdrawn = total_withdrawn.iter().sum();
+    portfolio.total_dividends = total_dividends.iter().sum();
 
     // todo: dividends
-    let total_dividends = 0.0;
-    let portfolio_gain_value =
-        (portfolio.current_portfolio_value + total_withdrawn + total_dividends) - total_invested;
-    portfolio.modified_dietz_yield = portfolio_gain_value / (total_invested + weighted_cash_flows);
 
-    portfolio.portfolio_gain = match total_invested {
+    let weighted_cash_flows: f64 = weighted_cash_flows.iter().sum();
+    let portfolio_gain_value =
+        (portfolio.current_portfolio_value + portfolio.total_withdrawn + portfolio.total_dividends)
+            - portfolio.total_invested;
+    portfolio.modified_dietz_yield =
+        portfolio_gain_value / (portfolio.total_invested + weighted_cash_flows);
+
+    portfolio.portfolio_gain = match portfolio.total_invested {
         0.0 => 0.0,
-        _ => portfolio_gain_value / total_invested,
+        _ => portfolio_gain_value / portfolio.total_invested,
     };
 
     let years_since_start = days_since_inception as f64 / 365.0;
