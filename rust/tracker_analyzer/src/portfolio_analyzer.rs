@@ -66,13 +66,13 @@ pub fn analyze_transactions(
                     symbols_count.insert(symbol, count);
                 }
                 TransactionType::Dividend => {
-                    let current_value = symbols_values.get(symbol).unwrap_or(&0.0)
-                        - transaction.quantity as f64 * price.adj_close;
-                    symbols_values.insert(symbol, current_value);
-
                     let count = symbols_count.get(&symbol).unwrap_or(&0.0);
                     let tr_value = transaction.pps * count;
                     total_dividends.push(tr_value);
+
+                    let dividend_cash_flow =
+                        tr_value * days_since_transaction as f64 / days_since_inception as f64;
+                    weighted_cash_flows.push(-dividend_cash_flow);
                 }
             }
         } else {
@@ -382,5 +382,53 @@ mod tests {
             format!("{:.5}", portfolio.modified_dietz_yield),
             format!("{:.5}", modified_dietz_yield)
         );
+    }
+
+    #[test]
+    fn test_dividends() {
+        let transactions = vec![
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: 2,
+                pps: 100.0,
+                date: "2024-01-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Buy,
+                quantity: 3,
+                pps: 100.0,
+                date: "2024-02-01".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Dividend,
+                quantity: 0,
+                pps: 10.0,
+                date: "2024-02-15".to_string(),
+                ..Default::default()
+            },
+            Transaction {
+                account_id: "1".to_string(),
+                symbol: "AAPL".to_string(),
+                transaction_type: TransactionType::Sell,
+                quantity: 4,
+                pps: 100.0,
+                date: "2024-05-01".to_string(),
+                ..Default::default()
+            },
+        ];
+
+        let portfolio = analyze_transactions(&transactions, &default_price_table()).unwrap();
+
+        assert_eq!(portfolio.total_invested, 500.0);
+        assert_eq!(portfolio.total_withdrawn, 400.0);
+        assert_eq!(portfolio.total_dividends, 50.0);
     }
 }
