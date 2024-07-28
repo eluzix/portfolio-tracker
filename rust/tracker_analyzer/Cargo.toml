@@ -15,6 +15,7 @@ rand = "0.8.5"
 serde = { workspace=true, features = ["derive"] }
 config = { version = "0.14.0", features = ["json"] }
 reqwest = { workspace = true, features = ["json"] }
+openssl = { version = "0.10.35", features = ["vendored"] }
 
 [dev-dependencies]
 #mockito = "1.4.0"
