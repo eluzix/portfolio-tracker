@@ -5,13 +5,15 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="color-scheme" content="light dark">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
   <title>Portfolio TrackerAnalyzer</title>
 </head>
 
 <body>
 
+    {{ portfolio }}
   <header class="container">
     <h1 class="pico-color-amber-200">Portfolio Tracker/Analyzer</h1>
   </header>
@@ -32,8 +34,9 @@
         <th>Value</th>
       </thead>
       <tbody>
+          {% for account_id, account in accounts %}
         <tr>
-          <td>ETF Main Account</td>
+            <td>{{ account.name }}</td>
           <td>2024-07-01</td>
           <td>$234,099</td>
           <td>$12,949</td>
@@ -44,6 +47,7 @@
           <td>18.1%</td>
           <td>$1,123,456</td>
         </tr>
+          {% endfor %}
       </tbody>
     </table>
   </main>

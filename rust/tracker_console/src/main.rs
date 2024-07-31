@@ -1,5 +1,6 @@
 use serde::Deserialize;
 use serde_json;
+use tera::{Context, Tera};
 use tracker_analyzer::helpers::analyze_user_portfolio;
 use tracker_analyzer::store::cache::{self, default_cache};
 use tracker_analyzer::store::market::MarketStackResponse;
@@ -69,12 +70,31 @@ async fn test_dividends() {
     println!(">>>>>>>> dividends: {:?}", d);
 }
 
+async fn test_template() {
+    let tera = match Tera::new("templates/**/*.html") {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Parsing error(s): {}", e);
+            panic!("EEEE");
+        }
+    };
+
+    let portfolio = analyze_user_portfolio("1").await.unwrap();
+    let mut ctx = Context::new();
+    ctx.insert("portfolio", &portfolio);
+    ctx.insert("accounts", &portfolio.accounts_metadata);
+
+    let result = tera.render("index.html", &ctx);
+    println!("{:?}", result);
+}
+
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    print_all().await;
+    // print_all().await;
     // test_price().await;
     // test_market().await;
     // test_dividends().await;
+    test_template().await;
     Ok(())
 }
