@@ -83,6 +83,7 @@ async fn test_template() {
     let mut ctx = Context::new();
     ctx.insert("portfolio", &portfolio);
     ctx.insert("accounts", &portfolio.accounts_metadata);
+    ctx.insert("accounts_stat", &portfolio.accounts);
 
     let result = tera.render("index.html", &ctx);
     println!("{:?}", result);

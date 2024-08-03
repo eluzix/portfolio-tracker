@@ -35,18 +35,19 @@
       </thead>
       <tbody>
           {% for account_id, account in accounts %}
+            {% set ac=accounts_stat[account_id]%}
         <tr>
             <td>{{ account.name }}</td>
           <td>2024-07-01</td>
-          <td>$234,099</td>
-          <td>$12,949</td>
-          <td>$69,889</td>
-          <td>$120,2222</td>
-          <td>12.23%</td>
-          <td>7.02%</td>
-          <td>18.1%</td>
-          <td>$1,123,456</td>
-        </tr>
+                        <td>${{ac.total_invested}}</td>
+                        <td>${{ac.total_withdrawn}}</td>
+                        <td>${{ac.total_dividends}}</td>
+                        <td>${{ac.portfolio_gain_value}}</td>
+                        <td>{{ac.portfolio_gain}}</td>
+                        <td>{{ac.annualized_yield}}%</td>
+                        <td>{{ac.modified_dietz_yield}}%</td>
+                        <td>{{ac.current_portfolio_value}}</td>
+                    </tr>
           {% endfor %}
       </tbody>
     </table>
