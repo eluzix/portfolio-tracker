@@ -1,7 +1,9 @@
-use lambda_http::{Body, Error, Request, RequestExt, Response, run, service_fn, tracing};
+use lambda_http::{run, service_fn, tracing, Body, Error, Request, RequestExt, Response};
 use serde_json::json;
 
 use tracker_analyzer::helpers::analyze_user_portfolio;
+
+pub mod filters;
 
 async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
     if let Some(user_id) = event.query_string_parameters().first("user_id") {

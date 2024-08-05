@@ -1,6 +1,9 @@
+use std::collections::HashMap;
+
+use numfmt::{Formatter, Precision};
 use serde::Deserialize;
 use serde_json;
-use tera::{Context, Tera};
+use tera::{to_value, Context, Tera, Value};
 use tracker_analyzer::helpers::analyze_user_portfolio;
 use tracker_analyzer::store::cache::{self, default_cache};
 use tracker_analyzer::store::market::MarketStackResponse;
@@ -70,14 +73,49 @@ async fn test_dividends() {
     println!(">>>>>>>> dividends: {:?}", d);
 }
 
+pub fn currency_filter(value: &Value, args: &HashMap<String, Value>) -> tera::Result<Value> {
+    let currency = match args.get("sign") {
+        Some(currency) => currency.as_str().unwrap(),
+        _ => "$",
+    };
+
+    let mut f = Formatter::new() // start with blank representation
+        .separator(',')
+        .unwrap()
+        .prefix(currency)
+        .unwrap()
+        .precision(Precision::Decimals(2));
+    if let Some(val) = value.as_f64() {
+        return Ok(to_value(f.fmt2(val)).unwrap());
+    }
+
+    Ok(to_value(value.to_string()).unwrap())
+}
+
+pub fn percent_filter(value: &Value, _: &HashMap<String, Value>) -> tera::Result<Value> {
+    let mut f = Formatter::new() // start with blank representation
+        .separator(',')
+        .unwrap()
+        .suffix("%")
+        .unwrap()
+        .precision(Precision::Decimals(2));
+    if let Some(val) = value.as_f64() {
+        return Ok(to_value(f.fmt2(val * 100.0)).unwrap());
+    }
+
+    Ok(to_value(value.to_string()).unwrap())
+}
+
 async fn test_template() {
-    let tera = match Tera::new("templates/**/*.html") {
+    let mut tera = match Tera::new("templates/**/*.html") {
         Ok(t) => t,
         Err(e) => {
             println!("Parsing error(s): {}", e);
             panic!("EEEE");
         }
     };
+    tera.register_filter("currency_filter", currency_filter);
+    tera.register_filter("percent_filter", percent_filter);
 
     let portfolio = analyze_user_portfolio("1").await.unwrap();
     let mut ctx = Context::new();

@@ -39,14 +39,14 @@
         <tr>
             <td>{{ account.name }}</td>
           <td>2024-07-01</td>
-                        <td>${{ac.total_invested}}</td>
-                        <td>${{ac.total_withdrawn}}</td>
-                        <td>${{ac.total_dividends}}</td>
-                        <td>${{ac.portfolio_gain_value}}</td>
-                        <td>{{ac.portfolio_gain}}</td>
-                        <td>{{ac.annualized_yield}}%</td>
-                        <td>{{ac.modified_dietz_yield}}%</td>
-                        <td>{{ac.current_portfolio_value}}</td>
+                        <td>{{ac.total_invested | currency_filter(sign="$")}}</td>
+                        <td>{{ac.total_withdrawn | currency_filter}}</td>
+                        <td>{{ac.total_dividends | currency_filter}}</td>
+                        <td>{{ac.portfolio_gain_value | currency_filter}}</td>
+                        <td>{{ac.portfolio_gain | percent_filter}}</td>
+                        <td>{{ac.annualized_yield | percent_filter}}</td>
+                        <td>{{ac.modified_dietz_yield | percent_filter}}</td>
+                        <td>{{ac.current_portfolio_value | currency_filter}}</td>
                     </tr>
           {% endfor %}
       </tbody>
