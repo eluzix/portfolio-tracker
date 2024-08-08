@@ -2726,6 +2726,7 @@ dependencies = [
  "aws-config",
  "aws-sdk-dynamodb",
  "lambda_http",
+ "numfmt",
  "openssl",
  "rayon",
  "serde_json",
