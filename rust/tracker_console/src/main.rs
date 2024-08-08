@@ -126,7 +126,7 @@ async fn test_template() {
 
     let portfolio = analyze_user_portfolio("1").await.unwrap();
     let mut ctx = Context::new();
-    ctx.insert("portfolio", &portfolio);
+    ctx.insert("portfolio", &portfolio.portfolio);
     ctx.insert("accounts", &portfolio.accounts_metadata);
     ctx.insert("accounts_stat", &portfolio.accounts);
 
