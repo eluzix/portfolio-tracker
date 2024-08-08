@@ -17,6 +17,9 @@ pub fn analyze_transactions(
         return Some(portfolio);
     }
 
+    portfolio.first_transaction = transactions.first().unwrap().naive_date().to_string();
+    portfolio.last_transaction = transactions.last().unwrap().naive_date().to_string();
+
     let all_symbols_set = extract_symbols(transactions);
     let today = Utc::now().date_naive();
     let days_since_inception = today
@@ -91,6 +94,8 @@ pub fn analyze_transactions(
     let portfolio_gain_value =
         (portfolio.current_portfolio_value + portfolio.total_withdrawn + portfolio.total_dividends)
             - portfolio.total_invested;
+    portfolio.portfolio_gain_value = portfolio_gain_value;
+
     portfolio.modified_dietz_yield =
         portfolio_gain_value / (portfolio.total_invested + weighted_cash_flows);
 

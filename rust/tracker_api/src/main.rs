@@ -20,7 +20,7 @@ pub fn currency_filter(value: &Value, args: &HashMap<String, Value>) -> tera::Re
         .unwrap()
         .prefix(currency)
         .unwrap()
-        .precision(Precision::Decimals(2));
+        .precision(Precision::Decimals(0));
     if let Some(val) = value.as_f64() {
         return Ok(to_value(f.fmt2(val)).unwrap());
     }

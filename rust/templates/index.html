@@ -15,6 +15,8 @@
       <h1>Portfolio Tracker/Analyzer</h1>
     </header>
 
+    <div class="uk-container">Portfolio inception: {{portfolio.first_transaction}}</div>
+
     <main class="uk-container uk-margin-medium-top">
       <h2>All Accounts</h2>
       <table class="uk-table uk-table-striped uk-table-hover uk-table-responsive">
@@ -33,7 +35,7 @@
         <tbody>
           <tr>
             <td class="uk-text-primary">Everything</td>
-            <td class="uk-text-primary">2024-07-01</td>
+            <td class="uk-text-primary">{{portfolio.last_transaction}}</td>
             <td class="uk-text-primary">{{portfolio.total_invested | currency_filter(sign="$")}}</td>
             <td class="uk-text-primary">{{portfolio.total_withdrawn | currency_filter}}</td>
             <td class="uk-text-primary">{{portfolio.total_dividends | currency_filter}}</td>
@@ -47,7 +49,7 @@
           {% set ac=accounts_stat[account_id]%}
           <tr>
             <td>{{ account.name }}</td>
-            <td>2024-07-01</td>
+            <td>{{ac.last_transaction}}</td>
             <td>{{ac.total_invested | currency_filter(sign="$")}}</td>
             <td>{{ac.total_withdrawn | currency_filter}}</td>
             <td>{{ac.total_dividends | currency_filter}}</td>

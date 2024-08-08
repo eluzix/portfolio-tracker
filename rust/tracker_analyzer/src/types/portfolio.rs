@@ -1,5 +1,5 @@
-use std::collections::HashSet;
 use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 
 #[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub struct AnalyzedPortfolio {
@@ -23,6 +23,9 @@ pub struct AnalyzedPortfolio {
     pub portfolio_gain_value: f64,
     pub annualized_yield: f64,
     pub modified_dietz_yield: f64,
+
+    pub first_transaction: String,
+    pub last_transaction: String,
 }
 
 impl AnalyzedPortfolio {
@@ -39,6 +42,8 @@ impl AnalyzedPortfolio {
             portfolio_gain_value: 0.0,
             annualized_yield: 0.0,
             modified_dietz_yield: 0.0,
+            first_transaction: "NA".to_string(),
+            last_transaction: "NA".to_string(),
         }
     }
 }
@@ -48,4 +53,3 @@ impl Default for AnalyzedPortfolio {
         AnalyzedPortfolio::new()
     }
 }
-
