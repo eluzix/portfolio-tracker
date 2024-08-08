@@ -8,6 +8,7 @@ use tracker_analyzer::helpers::analyze_user_portfolio;
 use tracker_analyzer::store::cache::{self, default_cache};
 use tracker_analyzer::store::market::MarketStackResponse;
 use tracker_analyzer::store::{market, tracker_config};
+use tracker_analyzer::types::transactions::Transaction;
 
 async fn print_all() {
     let portfolio = analyze_user_portfolio("1").await.unwrap();
@@ -66,11 +67,17 @@ async fn test_market() {
 }
 
 async fn test_dividends() {
-    let symbols = ["AAPL", "BRK-B"];
+    // let symbols = ["AAPL", "BRK-B"];
+    let symbols = ["TSLA", "BRK-B", "WIX"];
 
     let cache = default_cache();
-    let d = market::load_dividends(&*cache.clone(), &symbols).await;
-    println!(">>>>>>>> dividends: {:?}", d);
+    let d = market::load_dividends(&*cache.clone(), &symbols)
+        .await
+        .unwrap();
+    let dflt: Vec<Transaction> = vec![];
+    let tsla = d.get("TSLA").unwrap_or_else(|| &dflt);
+
+    println!(">>>>>>>> tsla dividends: {:?}", tsla);
 }
 
 pub fn currency_filter(value: &Value, args: &HashMap<String, Value>) -> tera::Result<Value> {
@@ -133,7 +140,7 @@ async fn main() -> Result<(), ()> {
     // print_all().await;
     // test_price().await;
     // test_market().await;
-    // test_dividends().await;
-    test_template().await;
+    test_dividends().await;
+    // test_template().await;
     Ok(())
 }
