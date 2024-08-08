@@ -1,57 +1,68 @@
 <!doctype html>
 <html lang="en">
 
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="color-scheme" content="light dark">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.1/normalize.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.4.1/milligram.css">
-  <title>Portfolio TrackerAnalyzer</title>
-</head>
+    <title>Portfolio TrackerAnalyzer</title>
+  </head>
 
-<body>
+  <body>
 
-    {{ portfolio }}
-  <header class="container">
-    <h1 class="pico-color-amber-200">Portfolio Tracker/Analyzer</h1>
-  </header>
+    <header class="container">
+      <h1 class="pico-color-amber-200">Portfolio Tracker/Analyzer</h1>
+    </header>
 
-  <main class="container">
-    <h2>All Accounts</h2>
-    <table class="striped">
-      <thead>
-        <th>Account</th>
-        <th>Last Transaction</th>
-        <th>Total Invested</th>
-        <th>Total Withdrawn</th>
-        <th>Total Dividend</th>
-        <th>Gain ($)</th>
-        <th>Gain (%)</th>
-        <th>Annualized Yield</th>
-        <th>Modified Dietz Method</th>
-        <th>Value</th>
-      </thead>
-      <tbody>
+    <main class="container">
+      <h2>All Accounts</h2>
+      <table class="striped">
+        <thead>
+          <th>Account</th>
+          <th>Last Transaction</th>
+          <th>Total Invested</th>
+          <th>Total Withdrawn</th>
+          <th>Total Dividend</th>
+          <th>Gain ($)</th>
+          <th>Gain (%)</th>
+          <th>Annualized Yield</th>
+          <th>Modified Dietz Method</th>
+          <th>Value</th>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Everything</td>
+            <td>2024-07-01</td>
+            <td>{{portfolio.total_invested | currency_filter(sign="$")}}</td>
+            <td>{{portfolio.total_withdrawn | currency_filter}}</td>
+            <td>{{portfolio.actotal_dividends | currency_filter}}</td>
+            <td>{{portfolio.portfolio_gain_value | currency_filter}}</td>
+            <td>{{portfolio.portfolio_gain | percent_filter}}</td>
+            <td>{{portfolio.annualized_yield | percent_filter}}</td>
+            <td>{{portfolio.modified_dietz_yield | percent_filter}}</td>
+            <td>{{portfolio.current_portfolio_value | currency_filter}}</td>
+          </tr>
           {% for account_id, account in accounts %}
-            {% set ac=accounts_stat[account_id]%}
-        <tr>
+          {% set ac=accounts_stat[account_id]%}
+          <tr>
             <td>{{ account.name }}</td>
-          <td>2024-07-01</td>
-                        <td>{{ac.total_invested | currency_filter(sign="$")}}</td>
-                        <td>{{ac.total_withdrawn | currency_filter}}</td>
-                        <td>{{ac.total_dividends | currency_filter}}</td>
-                        <td>{{ac.portfolio_gain_value | currency_filter}}</td>
-                        <td>{{ac.portfolio_gain | percent_filter}}</td>
-                        <td>{{ac.annualized_yield | percent_filter}}</td>
-                        <td>{{ac.modified_dietz_yield | percent_filter}}</td>
-                        <td>{{ac.current_portfolio_value | currency_filter}}</td>
-                    </tr>
+            <td>2024-07-01</td>
+            <td>{{ac.total_invested | currency_filter(sign="$")}}</td>
+            <td>{{ac.total_withdrawn | currency_filter}}</td>
+            <td>{{ac.total_dividends | currency_filter}}</td>
+            <td>{{ac.portfolio_gain_value | currency_filter}}</td>
+            <td>{{ac.portfolio_gain | percent_filter}}</td>
+            <td>{{ac.annualized_yield | percent_filter}}</td>
+            <td>{{ac.modified_dietz_yield | percent_filter}}</td>
+            <td>{{ac.current_portfolio_value | currency_filter}}</td>
+          </tr>
           {% endfor %}
-      </tbody>
-    </table>
-  </main>
-</body>
+        </tbody>
+      </table>
+    </main>
+  </body>
 
 </html>

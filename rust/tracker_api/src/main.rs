@@ -61,9 +61,10 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         // let js = serde_json::to_value(&portfolio).unwrap();
 
         let mut ctx = Context::new();
-        ctx.insert("portfolio", &portfolio);
+        // ctx.insert("portfolio", &portfolio);
         ctx.insert("accounts", &portfolio.accounts_metadata);
         ctx.insert("accounts_stat", &portfolio.accounts);
+        ctx.insert("portfolio", &portfolio.portfolio);
 
         let tera = load_tera();
         let result = tera.render("index.html", &ctx);
