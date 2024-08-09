@@ -140,7 +140,7 @@ async fn main() -> Result<(), ()> {
     // print_all().await;
     // test_price().await;
     // test_market().await;
-    // test_dividends().await;
-    test_template().await;
+    test_dividends().await;
+    // test_template().await;
     Ok(())
 }

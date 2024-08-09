@@ -227,6 +227,12 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
         dividends.extend(market_dividend);
     }
 
+    for lookup_symbol in missing_symbols {
+        if !dividends.contains_key(&lookup_symbol) {
+            dividends.insert(lookup_symbol.clone(), Vec::with_capacity(0));
+        }
+    }
+
     let s: String = serde_json::to_string(&dividends).unwrap();
     cache.set("dividends", s, 60 * 60 * 24 * 3).await;
 
