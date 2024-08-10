@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::collections::{HashMap, HashSet};
 
 use rayon::prelude::*;
@@ -42,19 +43,38 @@ pub fn sort_transactions_by_date(transactions: &mut [Transaction]) {
     transactions.sort_by(|a, b| a.date.cmp(&b.date));
 }
 
-fn merge_dividends(
+pub fn merge_dividends(
     transactions: &mut Vec<Transaction>,
     dividends: &Option<HashMap<String, Vec<Transaction>>>,
 ) {
     if let Some(dividends) = dividends {
-        let symbols = extract_symbols(transactions);
+        let mut symbols_first_tr: HashMap<String, String> = HashMap::new();
+        let symbols = transactions
+            .iter()
+            .map(|t| {
+                if let Some(tr_date) = symbols_first_tr.get(&t.symbol) {
+                    if tr_date > &t.date {
+                        symbols_first_tr.insert(t.symbol.clone(), t.date.clone());
+                    }
+                } else {
+                    symbols_first_tr.insert(t.symbol.clone(), t.date.clone());
+                }
+
+                t.symbol.clone()
+            })
+            .collect::<HashSet<_>>();
+
+        // let symbols = extract_symbols(transactions);
         for symbol in symbols.iter() {
             let symbol_dividends = dividends.get(symbol);
             if let Some(symbol_dividends) = symbol_dividends {
-                symbol_dividends.iter().for_each(|t| {
-                    // let tr = *t.clone();
-                    transactions.push(t.clone());
-                });
+                if let Some(start_date) = symbols_first_tr.get(&symbol.to_string()) {
+                    symbol_dividends.iter().for_each(|t| {
+                        if &t.date > start_date {
+                            transactions.push(t.clone());
+                        }
+                    });
+                }
             }
         }
     }

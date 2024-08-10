@@ -4,9 +4,12 @@ use numfmt::{Formatter, Precision};
 use serde::Deserialize;
 use serde_json;
 use tera::{to_value, Context, Tera, Value};
-use tracker_analyzer::helpers::analyze_user_portfolio;
+use tracker_analyzer::helpers::{
+    analyze_user_portfolio, merge_dividends, sort_transactions_by_date,
+};
 use tracker_analyzer::store::cache::{self, default_cache};
 use tracker_analyzer::store::market::MarketStackResponse;
+use tracker_analyzer::store::user_data::load_user_data;
 use tracker_analyzer::store::{market, tracker_config};
 use tracker_analyzer::types::transactions::Transaction;
 
@@ -80,6 +83,19 @@ async fn test_dividends() {
     println!(">>>>>>>> tsla dividends: {:?}", tsla);
 }
 
+async fn test_transactions() {
+    let user_id = "1";
+    let cache = default_cache();
+
+    let resp = load_user_data(user_id).await.unwrap();
+    let mut transactions = resp.0;
+    let d = market::load_dividends(&*cache.clone(), &["VT"]).await;
+    merge_dividends(&mut transactions, &d);
+    sort_transactions_by_date(&mut transactions);
+    let first_tr = transactions.first().unwrap();
+    println!(">>>>>>> {:?}", first_tr);
+}
+
 pub fn currency_filter(value: &Value, args: &HashMap<String, Value>) -> tera::Result<Value> {
     let currency = match args.get("sign") {
         Some(currency) => currency.as_str().unwrap(),
@@ -137,10 +153,11 @@ async fn test_template() {
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    // print_all().await;
+    print_all().await;
     // test_price().await;
     // test_market().await;
-    test_dividends().await;
+    // test_dividends().await;
+    // test_transactions().await;
     // test_template().await;
     Ok(())
 }
