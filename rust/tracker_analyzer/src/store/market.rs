@@ -221,7 +221,7 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
         missing_symbols
     );
     let market_dividend = MarketDataClient::fetch_dividends(&missing_symbols).await;
-    println!("[fetch_dividends] market_dividend: {:?}", market_dividend);
+    // println!("[fetch_dividends] market_dividend: {:?}", market_dividend);
 
     if let Some(market_dividend) = market_dividend {
         dividends.extend(market_dividend);

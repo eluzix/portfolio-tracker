@@ -19,49 +19,7 @@
 
     <main class="uk-container uk-margin-medium-top">
       <h2>All Accounts</h2>
-<table class="uk-table uk-table-striped uk-table-hover uk-table-responsive">
-  <thead>
-    <th>Account</th>
-    <th>Last Transaction</th>
-    <th>Total Invested</th>
-    <th>Total Withdrawn</th>
-    <th>Total Dividend</th>
-    <th>Gain ($)</th>
-    <th>Gain (%)</th>
-    <th>Annualized Yield</th>
-    <th>Modified Dietz Method</th>
-    <th>Value</th>
-  </thead>
-  <tbody>
-    <tr>
-      <td class="uk-text-primary">Everything</td>
-      <td class="uk-text-primary">{{portfolio.last_transaction}}</td>
-      <td class="uk-text-primary">{{portfolio.total_invested | currency_filter(sign="$")}}</td>
-      <td class="uk-text-primary">{{portfolio.total_withdrawn | currency_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.total_dividends | currency_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.portfolio_gain_value | currency_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.portfolio_gain | percent_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.annualized_yield | percent_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.modified_dietz_yield | percent_filter}}</td>
-      <td class="uk-text-primary">{{portfolio.current_portfolio_value | currency_filter}}</td>
-    </tr>
-    {% for account_id, account in accounts %}
-    {% set ac=accounts_stat[account_id]%}
-    <tr>
-      <td>{{ account.name }}</td>
-      <td>{{ac.last_transaction}}</td>
-      <td>{{ac.total_invested | currency_filter(sign="$")}}</td>
-      <td>{{ac.total_withdrawn | currency_filter}}</td>
-      <td>{{ac.total_dividends | currency_filter}}</td>
-      <td>{{ac.portfolio_gain_value | currency_filter}}</td>
-      <td>{{ac.portfolio_gain | percent_filter}}</td>
-      <td>{{ac.annualized_yield | percent_filter}}</td>
-      <td>{{ac.modified_dietz_yield | percent_filter}}</td>
-      <td>{{ac.current_portfolio_value | currency_filter}}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+      {% include "accounts-table.html" %}
     </main>
   </body>
 

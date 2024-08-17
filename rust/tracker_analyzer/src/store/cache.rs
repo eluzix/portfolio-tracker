@@ -47,18 +47,18 @@ impl Cache for DynamoCache {
             .unwrap();
 
         if let Some(item) = result.item {
-            // let now = SystemTime::now()
-            //     .duration_since(SystemTime::UNIX_EPOCH)
-            //     .unwrap()
-            //     .as_secs();
+            let now = SystemTime::now()
+                .duration_since(SystemTime::UNIX_EPOCH)
+                .unwrap()
+                .as_secs();
 
             // println!("Found item: {:?}, NOW ==> {}", item, now);
 
-            // if let Some(AttributeValue::N(ttl)) = item.get("ttl") {
-            //     if now > ttl.as_str().parse::<u64>().unwrap() {
-            //         return None;
-            //     }
-            // }
+            if let Some(AttributeValue::N(ttl)) = item.get("ttl") {
+                if now > ttl.as_str().parse::<u64>().unwrap() {
+                    return None;
+                }
+            }
 
             let val: Option<_> = match item.get("value") {
                 Some(AttributeValue::B(blob)) => {
