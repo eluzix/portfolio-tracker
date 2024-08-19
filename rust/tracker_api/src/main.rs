@@ -14,7 +14,10 @@ fn base_response() -> Builder {
     Response::builder()
         .status(200)
         .header("content-type", "text/html")
-        .header("access-control-allow-origin", "https://eluzix.netlify.app")
+        .header(
+            "access-control-allow-origin",
+            "https://tracker.arrakisholdings.com",
+        )
         .header("access-control-allow-methods", "get, post, options")
         .header(
             "access-control-allow-headers",
