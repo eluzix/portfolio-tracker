@@ -6,21 +6,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="color-scheme" content="light dark">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.9/dist/css/uikit.min.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://eluzix.netlify.app/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://eluzix.netlify.app/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://eluzix.netlify.app/favicon-16x16.png">
+    <link rel="manifest" href="https://eluzix.netlify.app/site.webmanifest">
     <title>Portfolio TrackerAnalyzer</title>
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script> <script src="https://unpkg.com/htmx.org@2.0.2"></script>
   </head>
 
   <body>
+    <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" />
 
     <header class="uk-container uk-margin-large-top">
       <h1>Portfolio Tracker/Analyzer</h1>
     </header>
 
-    <div class="uk-container">Portfolio inception: {{portfolio.first_transaction}}</div>
-
-    <main class="uk-container uk-margin-medium-top">
-      <h2>All Accounts</h2>
-      {% include "accounts-table.html" %}
-    </main>
+    <main hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-vals='{"user_id": "1"}'></main>
   </body>
 
 </html>
