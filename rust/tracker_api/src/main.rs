@@ -1,5 +1,5 @@
 use lambda_http::{
-    http::{response::Builder, Method},
+    http::{response::Builder, Method, StatusCode},
     run, service_fn, tracing, Body, Error, Request, RequestExt, Response,
 };
 use serde_json::json;
@@ -10,14 +10,20 @@ use tracker_analyzer::helpers::analyze_user_portfolio;
 
 mod template_utils;
 
-fn base_response() -> Builder {
+fn base_response(req: &Request, status: StatusCode) -> Builder {
+    let mut allow_origin = "https://tracker.arrakisholdings.com";
+
+    if let Some(origin) = req.headers().get("Origin") {
+        let s = origin.to_str().unwrap();
+        if [allow_origin, "https://portfolio-tracker-8nd.pages.dev"].contains(&s) {
+            allow_origin = s;
+        }
+    }
+
     Response::builder()
-        .status(200)
+        .status(status)
         .header("content-type", "text/html")
-        .header(
-            "access-control-allow-origin",
-            "https://tracker.arrakisholdings.com",
-        )
+        .header("access-control-allow-origin", allow_origin)
         .header("access-control-allow-methods", "get, post, options")
         .header(
             "access-control-allow-headers",
@@ -28,7 +34,7 @@ fn base_response() -> Builder {
 
 async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
     if event.method() == Method::OPTIONS {
-        let resp = base_response()
+        let resp = base_response(&event, StatusCode::OK)
             // .header("", "")
             .body(Body::default())
             .map_err(Box::new)?;
@@ -49,15 +55,14 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         let tera = load_tera();
         // let result = tera.render("index.html", &ctx);
         let result = tera.render("accounts-table.html", &ctx);
-        let resp = base_response()
+        let resp = base_response(&event, StatusCode::OK)
             // .header("content-type", "application/json")
             // .body(Body::from(serde_json::to_vec(&js).unwrap()))
             .body(Body::Text(result.unwrap()))
             .map_err(Box::new)?;
         Ok(resp)
     } else {
-        let resp = Response::builder()
-            .status(400)
+        let resp = base_response(&event, StatusCode::FORBIDDEN)
             .body(Body::from(json!({"error": "Missing user_id"}).to_string()))
             .map_err(Box::new)?;
         Ok(resp)
