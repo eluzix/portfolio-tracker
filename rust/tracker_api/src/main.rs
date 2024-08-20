@@ -15,7 +15,13 @@ fn base_response(req: &Request, status: StatusCode) -> Builder {
 
     if let Some(origin) = req.headers().get("Origin") {
         let s = origin.to_str().unwrap();
-        if [allow_origin, "https://portfolio-tracker-8nd.pages.dev"].contains(&s) {
+        if [
+            allow_origin,
+            "https://portfolio-tracker-8nd.pages.dev",
+            "http://localhost:8000",
+        ]
+        .contains(&s)
+        {
             allow_origin = s;
         }
     }
@@ -27,7 +33,7 @@ fn base_response(req: &Request, status: StatusCode) -> Builder {
         .header("access-control-allow-methods", "get, post, options")
         .header(
             "access-control-allow-headers",
-            "content-type, hx-request, hx-current-url",
+            "content-type, hx-request, hx-current-url, hx-trigger, hx-target",
         )
         .header("access-control-max-age", "7200")
 }

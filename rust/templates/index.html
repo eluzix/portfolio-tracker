@@ -10,7 +10,7 @@
     <link rel="icon" type="image/png" sizes="32x32" href="https://tracker.arrakisholdings.com/favicon-32x32.png">
     <link rel="icon" type="image/png" sizes="16x16" href="https://tracker.arrakisholdings.com/favicon-16x16.png">
     <link rel="manifest" href="https://tracker.arrakisholdings.com/site.webmanifest">
-    <title>Portfolio TrackerAnalyzer</title>
+    <title>Portfolio Tracker</title>
     <script src="https://unpkg.com/htmx.org@2.0.2"></script> <script src="https://unpkg.com/htmx.org@2.0.2"></script>
   </head>
 
@@ -18,10 +18,20 @@
     <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" />
 
     <header class="uk-container uk-margin-large-top">
-      <h1>Portfolio Tracker/Analyzer</h1>
+      <h1 class="uk-heading-divider">Portfolio Tracker/Analyzer</h1>
     </header>
 
-    <main hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-vals='{"user_id": "1"}'>
+    <input type="hidden" id="p-uid" name="user_id" value="1" />
+
+    <div class="uk-container uk-padding">
+      <button class="uk-button uk-button-default" 
+        hx-get="/tracker_api" hx-trigger="click" 
+        hx-include="#p-uid"
+        hx-on:htmx:config-request="event.detail.parameters.currency='ILS'"
+        hx-target="#main">View as ₪</button>
+    </div>
+
+    <main id="main" hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-include="#p-uid"> 
       <div class="uk-container">
         Loading...
       </div>
