@@ -3,7 +3,10 @@ use crate::{
     types::transactions::{Transaction, TransactionType},
 };
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    fmt::{self, Display, Formatter},
+};
 
 use serde_json::Value;
 
@@ -24,12 +27,30 @@ impl SymbolPrice {
     }
 }
 
+#[derive(Debug)]
+pub struct MarketError {
+    details: String,
+}
+
+impl Display for MarketError {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "Error: {}", self.details)
+    }
+}
+
+impl std::error::Error for MarketError {
+    fn description(&self) -> &str {
+        &self.details
+    }
+}
+
 pub struct MarketDataClient;
 
 pub trait MarketDataFetcher {
     #![allow(async_fn_in_trait)]
     async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>>;
     async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>>;
+    async fn fetch_exchange_rates() -> Result<HashMap<String, f64>, MarketError>;
 }
 
 #[derive(Debug, Deserialize)]
@@ -132,6 +153,45 @@ impl MarketDataFetcher for MarketDataClient {
 
         None
     }
+
+    async fn fetch_exchange_rates() -> Result<HashMap<String, f64>, MarketError> {
+        let key: String = tracker_config::get("exchangerates_key").unwrap();
+
+        let client = reqwest::Client::new();
+
+        let res: Value = client
+            .get("https://api.apilayer.com/exchangerates_data/latest")
+            .query(&[("base", "USD"), ("symbols", "ILS, EUR")])
+            .header("apikey", key)
+            .send()
+            .await
+            .unwrap()
+            .json()
+            .await
+            .unwrap();
+
+        let js_rates = res.get("rates").unwrap().as_object().unwrap();
+        // println!(">>>>>>>> exhange: {:?}", js_rates);
+        let mut rates: HashMap<String, f64> = HashMap::with_capacity(2);
+
+        rates.insert(
+            "ILS".to_string(),
+            js_rates.get("ILS").unwrap().as_f64().unwrap(),
+        );
+        rates.insert(
+            "EUR".to_string(),
+            js_rates.get("EUR").unwrap().as_f64().unwrap(),
+        );
+
+        Ok(rates)
+
+        //
+        // println!(">>>>>>>> rates: {:?}", rates);
+        //
+        // Err(MarketError {
+        //     details: "random error".to_string(),
+        // })
+    }
 }
 
 #[cfg(test)]
@@ -142,6 +202,12 @@ impl MarketDataFetcher for MarketDataClient {
 
     async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
         None
+    }
+
+    async fn fetch_exchange_rates() -> Result<HashMap<String, f64>, MarketError> {
+        Err(MarketError {
+            details: "random error".to_string(),
+        })
     }
 }
 
@@ -237,6 +303,21 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
     cache.set("dividends", s, 60 * 60 * 24 * 3).await;
 
     Some(dividends)
+}
+
+pub async fn load_exhnage_rate<C: Cache + Send + Sync>(
+    cache: &C,
+    symbol: &str,
+) -> Result<f64, MarketError> {
+    if let Ok(res) = MarketDataClient::fetch_exchange_rates().await {
+        if let Some(val) = res.get(symbol) {
+            return Ok(val.clone());
+        }
+    }
+
+    Err(MarketError {
+        details: "Unable to load exchange rates".to_string(),
+    })
 }
 
 #[cfg(test)]

@@ -150,6 +150,14 @@ async fn test_template() {
     println!("{:?}", result);
 }
 
+async fn test_exhange() {
+    let c = "ILS";
+    let cache = default_cache();
+    if let Ok(res) = market::load_exhnage_rate(&*cache, c).await {
+        println!("for {} rate: {}", c, res);
+    }
+}
+
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -158,6 +166,7 @@ async fn main() -> Result<(), ()> {
     // test_market().await;
     // test_dividends().await;
     // test_transactions().await;
-    test_template().await;
+    test_exhange().await;
+    // test_template().await;
     Ok(())
 }

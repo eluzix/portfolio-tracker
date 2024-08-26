@@ -1,7 +1,6 @@
 use std::collections::HashMap;
 
 use chrono::Utc;
-use rayon::prelude::*;
 
 use crate::helpers::extract_symbols;
 use crate::store::market::SymbolPrice;
