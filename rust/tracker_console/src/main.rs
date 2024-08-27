@@ -161,6 +161,13 @@ async fn test_exhange() {
     }
 }
 
+async fn test_cur_metadata() {
+    let c = "ILS";
+    let cache = default_cache();
+    let res = market::load_currency_metadata(&*cache, c).await;
+    println!("for {:?} MD: {:?}", c, res)
+}
+
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
@@ -170,6 +177,7 @@ async fn main() -> Result<(), ()> {
     // test_dividends().await;
     // test_transactions().await;
     // test_exhange().await;
+    // test_cur_metadata().await;
     test_template().await;
     Ok(())
 }

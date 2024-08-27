@@ -72,6 +72,13 @@ pub struct MarketDividendsResponse {
     // pagination: HashMap<String, u32>,
 }
 
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct CurrencyMetadata {
+    pub symbol: String,
+    pub name: String,
+    pub code: String,
+}
+
 #[cfg(not(test))]
 impl MarketDataFetcher for MarketDataClient {
     async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>> {
@@ -327,6 +334,59 @@ pub async fn load_exhnage_rate<C: Cache + Send + Sync>(
 
     Err(MarketError {
         details: "Unable to load exchange rates".to_string(),
+    })
+}
+
+pub async fn load_currency_metadata<C: Cache + Send + Sync>(
+    cache: &C,
+    symbol: &str,
+) -> Result<CurrencyMetadata, MarketError> {
+    if let Some(cached_metadata) = cache.get("currencies_metadata").await {
+        if let Some(md) = cached_metadata.get(symbol) {
+            return Ok(CurrencyMetadata {
+                code: md.get("code").unwrap().as_str().unwrap().to_string(),
+                symbol: md.get("symbol").unwrap().as_str().unwrap().to_string(),
+                name: md.get("name").unwrap().as_str().unwrap().to_string(),
+            });
+        }
+    }
+
+    let key: String = tracker_config::get("marketstack_key").unwrap();
+    let client = reqwest::Client::new();
+    let res: Result<Value, reqwest::Error> = client
+        .get("https://api.marketstack.com/v1/currencies")
+        .query(&[("access_key", key)])
+        .send()
+        .await
+        .unwrap()
+        .json()
+        .await;
+
+    if let Ok(res) = res {
+        let js_data = res.get("data").unwrap().as_array().unwrap();
+        let mut meta: HashMap<String, CurrencyMetadata> = HashMap::with_capacity(js_data.len());
+        for cur in js_data.iter() {
+            let code = cur.get("code").unwrap().as_str().unwrap().to_string();
+            meta.insert(
+                code.clone(),
+                CurrencyMetadata {
+                    code: code.clone(),
+                    symbol: cur.get("symbol").unwrap().as_str().unwrap().to_string(),
+                    name: cur.get("name").unwrap().to_string(),
+                },
+            );
+        }
+
+        let s: String = serde_json::to_string(&meta).unwrap();
+        cache.set("currencies_metadata", s, 60 * 60 * 24 * 30).await;
+
+        if let Some(md) = meta.get(symbol) {
+            return Ok(md.clone());
+        }
+    }
+
+    Err(MarketError {
+        details: "Error loading currency metadata".to_string(),
     })
 }
 

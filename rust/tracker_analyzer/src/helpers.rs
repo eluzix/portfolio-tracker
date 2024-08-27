@@ -5,7 +5,7 @@ use rayon::prelude::*;
 
 use crate::portfolio_analyzer::analyze_transactions;
 use crate::store::cache::default_cache;
-use crate::store::market;
+use crate::store::market::{self, CurrencyMetadata};
 use crate::store::user_data::load_user_data;
 use crate::types::account::AccountMetadata;
 use crate::types::portfolio::AnalyzedPortfolio;
@@ -97,9 +97,14 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
     let dividends = market::load_dividends(&*cache, &all_symbols).await;
 
     let mut rate: f64 = 1.0;
+    let mut md_symbol: String = "$".to_string();
     if currency != "USD" {
         if let Ok(res) = market::load_exhnage_rate(&*cache, currency).await {
             rate = res;
+        }
+
+        if let Ok(res) = market::load_currency_metadata(&*cache, currency).await {
+            md_symbol = res.symbol;
         }
     }
 
@@ -127,7 +132,7 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
         accounts_metadata,
         accounts: results_map,
         portfolio: all_portfolio_data,
-        currency: currency.to_string(),
+        currency: md_symbol,
         rate: rate,
     })
 }
