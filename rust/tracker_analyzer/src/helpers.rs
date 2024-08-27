@@ -97,14 +97,16 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
     let dividends = market::load_dividends(&*cache, &all_symbols).await;
 
     let mut rate: f64 = 1.0;
-    let mut md_symbol: String = "$".to_string();
+    let mut currency_md: CurrencyMetadata = CurrencyMetadata::default();
     if currency != "USD" {
-        if let Ok(res) = market::load_exhnage_rate(&*cache, currency).await {
-            rate = res;
-        }
+        let join_res = tokio::try_join!(
+            market::load_exhnage_rate(&*cache, currency),
+            market::load_currency_metadata(&*cache, currency)
+        );
 
-        if let Ok(res) = market::load_currency_metadata(&*cache, currency).await {
-            md_symbol = res.symbol;
+        if let Ok((rates_resp, md_resp)) = join_res {
+            rate = rates_resp;
+            currency_md = md_resp;
         }
     }
 
@@ -132,8 +134,8 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
         accounts_metadata,
         accounts: results_map,
         portfolio: all_portfolio_data,
-        currency: md_symbol,
-        rate: rate,
+        rate,
+        currency_md,
     })
 }
 

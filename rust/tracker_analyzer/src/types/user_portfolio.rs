@@ -1,5 +1,5 @@
-use crate::types::account::AccountMetadata;
 use crate::types::portfolio::AnalyzedPortfolio;
+use crate::{store::market::CurrencyMetadata, types::account::AccountMetadata};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -8,6 +8,6 @@ pub struct UserPortfolio {
     pub accounts_metadata: HashMap<String, AccountMetadata>,
     pub accounts: HashMap<String, AnalyzedPortfolio>,
     pub portfolio: AnalyzedPortfolio,
-    pub currency: String,
     pub rate: f64,
+    pub currency_md: CurrencyMetadata,
 }

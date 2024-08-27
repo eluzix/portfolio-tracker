@@ -62,7 +62,7 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         ctx.insert("accounts", &portfolio.accounts_metadata);
         ctx.insert("accounts_stat", &portfolio.accounts);
         ctx.insert("portfolio", &portfolio.portfolio);
-        ctx.insert("currency", &portfolio.currency);
+        ctx.insert("currency", &portfolio.currency_md);
         ctx.insert("rate", &portfolio.rate);
 
         let tera = load_tera();

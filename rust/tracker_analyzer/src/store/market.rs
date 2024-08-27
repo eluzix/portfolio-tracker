@@ -72,11 +72,21 @@ pub struct MarketDividendsResponse {
     // pagination: HashMap<String, u32>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
 pub struct CurrencyMetadata {
     pub symbol: String,
     pub name: String,
     pub code: String,
+}
+
+impl Default for CurrencyMetadata {
+    fn default() -> Self {
+        CurrencyMetadata {
+            symbol: "$".to_string(),
+            name: "USD".to_string(),
+            code: "USD".to_string(),
+        }
+    }
 }
 
 #[cfg(not(test))]

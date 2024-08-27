@@ -2,7 +2,8 @@
   <ul class="uk-list">
     <li>Portfolio inception: {{portfolio.first_transaction}}</li>
     {% if rate != 1.0 %}
-    <li>Exchange rate: {{currency}}{{rate}}</li>
+    <li>Exchange symbol: {{currency.code}}</li>
+    <li>Exchange rate: {{currency.symbol}}{{rate}}</li>
     {% endif %}
   </ul>
 </div>
@@ -26,28 +27,28 @@
       <tr>
         <td class="uk-text-primary">Everything</td>
         <td class="uk-text-primary">{{portfolio.last_transaction}}</td>
-        <td class="uk-text-primary">{{portfolio.total_invested * rate | currency_filter(sign=currency)}}</td>
-        <td class="uk-text-primary">{{portfolio.total_withdrawn * rate | currency_filter(sign=currency)}}</td>
-        <td class="uk-text-primary">{{portfolio.total_dividends * rate | currency_filter(sign=currency)}}</td>
-        <td class="uk-text-primary">{{portfolio.portfolio_gain_value * rate | currency_filter(sign=currency)}}</td>
+        <td class="uk-text-primary">{{portfolio.total_invested * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td class="uk-text-primary">{{portfolio.total_withdrawn * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td class="uk-text-primary">{{portfolio.total_dividends * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td class="uk-text-primary">{{portfolio.portfolio_gain_value * rate | currency_filter(sign=currency.symbol)}}</td>
         <td class="uk-text-primary">{{portfolio.portfolio_gain | percent_filter}}</td>
         <td class="uk-text-primary">{{portfolio.annualized_yield | percent_filter}}</td>
         <td class="uk-text-primary">{{portfolio.modified_dietz_yield | percent_filter}}</td>
-        <td class="uk-text-primary">{{portfolio.current_portfolio_value * rate | currency_filter(sign=currency)}}</td>
+        <td class="uk-text-primary">{{portfolio.current_portfolio_value * rate | currency_filter(sign=currency.symbol)}}</td>
       </tr>
       {% for account_id, account in accounts %}
       {% set ac=accounts_stat[account_id]%}
       <tr>
         <td>{{ account.name }}</td>
         <td>{{ac.last_transaction}}</td>
-        <td>{{ac.total_invested * rate | currency_filter(sign=currency)}}</td>
-        <td>{{ac.total_withdrawn * rate | currency_filter(sign=currency)}}</td>
-        <td>{{ac.total_dividends * rate | currency_filter(sign=currency)}}</td>
-        <td>{{ac.portfolio_gain_value * rate | currency_filter(sign=currency)}}</td>
+        <td>{{ac.total_invested * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td>{{ac.total_withdrawn * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td>{{ac.total_dividends * rate | currency_filter(sign=currency.symbol)}}</td>
+        <td>{{ac.portfolio_gain_value * rate | currency_filter(sign=currency.symbol)}}</td>
         <td>{{ac.portfolio_gain | percent_filter}}</td>
         <td>{{ac.annualized_yield | percent_filter}}</td>
         <td>{{ac.modified_dietz_yield | percent_filter}}</td>
-        <td>{{ac.current_portfolio_value * rate | currency_filter(sign=currency)}}</td>
+        <td>{{ac.current_portfolio_value * rate | currency_filter(sign=currency.symbol)}}</td>
       </tr>
       {% endfor %}
     </tbody>

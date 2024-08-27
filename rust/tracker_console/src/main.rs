@@ -145,7 +145,7 @@ async fn test_template() {
     ctx.insert("portfolio", &portfolio.portfolio);
     ctx.insert("accounts", &portfolio.accounts_metadata);
     ctx.insert("accounts_stat", &portfolio.accounts);
-    ctx.insert("currency", &portfolio.currency);
+    ctx.insert("currency", &portfolio.currency_md);
     ctx.insert("rate", &portfolio.rate);
 
     // let result = tera.render("index.html", &ctx);
