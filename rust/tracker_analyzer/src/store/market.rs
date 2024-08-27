@@ -231,7 +231,7 @@ impl MarketDataFetcher for MarketDataClient {
 pub async fn load_prices<C: Cache + Send + Sync>(
     cache: &C,
     symbols: &[&str],
-) -> Option<HashMap<String, SymbolPrice>> {
+) -> Result<HashMap<String, SymbolPrice>, MarketError> {
     let mut prices = HashMap::new();
     let cached_prices = cache.get("prices").await;
     let mut missing_symbols: HashSet<String> = symbols.iter().map(|s| s.to_string()).collect();
@@ -243,12 +243,12 @@ pub async fn load_prices<C: Cache + Send + Sync>(
         }
 
         if missing_symbols.is_empty() {
-            return Some(prices);
+            return Ok(prices);
         }
     }
 
     if missing_symbols.is_empty() {
-        return Some(prices);
+        return Ok(prices);
     }
 
     let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
@@ -266,13 +266,13 @@ pub async fn load_prices<C: Cache + Send + Sync>(
         cache.set("prices", s, 60 * 60 * 12).await;
     }
 
-    Some(prices)
+    Ok(prices)
 }
 
 pub async fn load_dividends<C: Cache + Send + Sync>(
     cache: &C,
     symbols: &[&str],
-) -> Option<HashMap<String, Vec<Transaction>>> {
+) -> Result<HashMap<String, Vec<Transaction>>, MarketError> {
     let mut dividends: HashMap<String, Vec<Transaction>> = HashMap::with_capacity(symbols.len());
     let cached_dividends = cache.get("dividends").await;
     let mut missing_symbols: HashSet<String> = symbols.iter().map(|s| s.to_string()).collect();
@@ -290,12 +290,12 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
         }
 
         if missing_symbols.is_empty() {
-            return Some(dividends);
+            return Ok(dividends);
         }
     }
 
     if missing_symbols.is_empty() {
-        return Some(dividends);
+        return Ok(dividends);
     }
 
     let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
@@ -319,7 +319,7 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
     let s: String = serde_json::to_string(&dividends).unwrap();
     cache.set("dividends", s, 60 * 60 * 24 * 3).await;
 
-    Some(dividends)
+    Ok(dividends)
 }
 
 pub async fn load_exhnage_rate<C: Cache + Send + Sync>(

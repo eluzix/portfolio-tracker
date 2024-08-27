@@ -89,11 +89,12 @@ async fn test_transactions() {
 
     let resp = load_user_data(user_id).await.unwrap();
     let mut transactions = resp.0;
-    let d = market::load_dividends(&*cache.clone(), &["VT"]).await;
-    merge_dividends(&mut transactions, &d);
-    sort_transactions_by_date(&mut transactions);
-    let first_tr = transactions.first().unwrap();
-    println!(">>>>>>> {:?}", first_tr);
+    if let Ok(d) = market::load_dividends(&*cache.clone(), &["VT"]).await {
+        merge_dividends(&mut transactions, &d);
+        sort_transactions_by_date(&mut transactions);
+        let first_tr = transactions.first().unwrap();
+        println!(">>>>>>> {:?}", first_tr);
+    }
 }
 
 pub fn currency_filter(value: &Value, args: &HashMap<String, Value>) -> tera::Result<Value> {

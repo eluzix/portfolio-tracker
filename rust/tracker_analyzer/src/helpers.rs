@@ -45,39 +45,40 @@ pub fn sort_transactions_by_date(transactions: &mut [Transaction]) {
 
 pub fn merge_dividends(
     transactions: &mut Vec<Transaction>,
-    dividends: &Option<HashMap<String, Vec<Transaction>>>,
+    dividends: &HashMap<String, Vec<Transaction>>,
+    // dividends: &Option<HashMap<String, Vec<Transaction>>>,
 ) {
-    if let Some(dividends) = dividends {
-        let mut symbols_first_tr: HashMap<String, String> = HashMap::new();
-        let symbols = transactions
-            .iter()
-            .map(|t| {
-                if let Some(tr_date) = symbols_first_tr.get(&t.symbol) {
-                    if tr_date > &t.date {
-                        symbols_first_tr.insert(t.symbol.clone(), t.date.clone());
-                    }
-                } else {
+    // if let Some(dividends) = dividends {
+    let mut symbols_first_tr: HashMap<String, String> = HashMap::new();
+    let symbols = transactions
+        .iter()
+        .map(|t| {
+            if let Some(tr_date) = symbols_first_tr.get(&t.symbol) {
+                if tr_date > &t.date {
                     symbols_first_tr.insert(t.symbol.clone(), t.date.clone());
                 }
+            } else {
+                symbols_first_tr.insert(t.symbol.clone(), t.date.clone());
+            }
 
-                t.symbol.clone()
-            })
-            .collect::<HashSet<_>>();
+            t.symbol.clone()
+        })
+        .collect::<HashSet<_>>();
 
-        // let symbols = extract_symbols(transactions);
-        for symbol in symbols.iter() {
-            let symbol_dividends = dividends.get(symbol);
-            if let Some(symbol_dividends) = symbol_dividends {
-                if let Some(start_date) = symbols_first_tr.get(&symbol.to_string()) {
-                    symbol_dividends.iter().for_each(|t| {
-                        if &t.date > start_date {
-                            transactions.push(t.clone());
-                        }
-                    });
-                }
+    // let symbols = extract_symbols(transactions);
+    for symbol in symbols.iter() {
+        let symbol_dividends = dividends.get(symbol);
+        if let Some(symbol_dividends) = symbol_dividends {
+            if let Some(start_date) = symbols_first_tr.get(&symbol.to_string()) {
+                symbol_dividends.iter().for_each(|t| {
+                    if &t.date > start_date {
+                        transactions.push(t.clone());
+                    }
+                });
             }
         }
     }
+    // }
 }
 
 pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<UserPortfolio> {
@@ -93,8 +94,13 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
 
     let symbols = extract_symbols(&transactions);
     let all_symbols = symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>();
-    let prices = market::load_prices(&*cache, all_symbols.as_slice()).await?;
-    let dividends = market::load_dividends(&*cache, &all_symbols).await;
+
+    let data_resp = tokio::try_join!(
+        market::load_prices(&*cache, all_symbols.as_slice()),
+        market::load_dividends(&*cache, &all_symbols),
+    );
+
+    let (prices, dividends) = data_resp.unwrap();
 
     let mut rate: f64 = 1.0;
     let mut currency_md: CurrencyMetadata = CurrencyMetadata::default();
