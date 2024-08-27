@@ -14,7 +14,7 @@ use tracker_analyzer::store::{market, tracker_config};
 use tracker_analyzer::types::transactions::Transaction;
 
 async fn print_all() {
-    let portfolio = analyze_user_portfolio("1").await.unwrap();
+    let portfolio = analyze_user_portfolio("1", "USD").await.unwrap();
 
     for (account_id, portfolio_data) in portfolio.accounts.iter() {
         let account_data = portfolio.accounts_metadata.get(account_id).unwrap();
@@ -140,13 +140,16 @@ async fn test_template() {
     tera.register_filter("currency_filter", currency_filter);
     tera.register_filter("percent_filter", percent_filter);
 
-    let portfolio = analyze_user_portfolio("1").await.unwrap();
+    let portfolio = analyze_user_portfolio("1", "ILS").await.unwrap();
     let mut ctx = Context::new();
     ctx.insert("portfolio", &portfolio.portfolio);
     ctx.insert("accounts", &portfolio.accounts_metadata);
     ctx.insert("accounts_stat", &portfolio.accounts);
+    ctx.insert("currency", &portfolio.currency);
+    ctx.insert("rate", &portfolio.rate);
 
-    let result = tera.render("index.html", &ctx);
+    // let result = tera.render("index.html", &ctx);
+    let result = tera.render("accounts-table.html", &ctx);
     println!("{:?}", result);
 }
 
@@ -166,7 +169,7 @@ async fn main() -> Result<(), ()> {
     // test_market().await;
     // test_dividends().await;
     // test_transactions().await;
-    test_exhange().await;
-    // test_template().await;
+    // test_exhange().await;
+    test_template().await;
     Ok(())
 }

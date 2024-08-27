@@ -48,8 +48,13 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         return Ok(resp);
     }
 
+    let currency = event
+        .query_string_parameters_ref()
+        .and_then(|params| params.first("currency"))
+        .unwrap_or_else(|| "USD");
+
     if let Some(user_id) = event.query_string_parameters().first("user_id") {
-        let portfolio = analyze_user_portfolio(user_id).await.unwrap();
+        let portfolio = analyze_user_portfolio(user_id, currency).await.unwrap();
         // let js = serde_json::to_value(&portfolio).unwrap();
 
         let mut ctx = Context::new();
@@ -57,6 +62,8 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         ctx.insert("accounts", &portfolio.accounts_metadata);
         ctx.insert("accounts_stat", &portfolio.accounts);
         ctx.insert("portfolio", &portfolio.portfolio);
+        ctx.insert("currency", &portfolio.currency);
+        ctx.insert("rate", &portfolio.rate);
 
         let tera = load_tera();
         // let result = tera.render("index.html", &ctx);

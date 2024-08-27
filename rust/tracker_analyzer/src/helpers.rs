@@ -80,7 +80,7 @@ pub fn merge_dividends(
     }
 }
 
-pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
+pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<UserPortfolio> {
     let cache = default_cache();
     let resp = load_user_data(user_id).await.unwrap();
     let accounts_metadata: HashMap<String, AccountMetadata> = resp
@@ -95,6 +95,13 @@ pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
     let all_symbols = symbols.iter().map(|s| s.as_str()).collect::<Vec<_>>();
     let prices = market::load_prices(&*cache, all_symbols.as_slice()).await?;
     let dividends = market::load_dividends(&*cache, &all_symbols).await;
+
+    let mut rate: f64 = 1.0;
+    if currency != "USD" {
+        if let Ok(res) = market::load_exhnage_rate(&*cache, currency).await {
+            rate = res;
+        }
+    }
 
     let mut account_transactions = transactions_by_account(&transactions);
     let results = account_transactions
@@ -120,6 +127,8 @@ pub async fn analyze_user_portfolio(user_id: &str) -> Option<UserPortfolio> {
         accounts_metadata,
         accounts: results_map,
         portfolio: all_portfolio_data,
+        currency: currency.to_string(),
+        rate: rate,
     })
 }
 

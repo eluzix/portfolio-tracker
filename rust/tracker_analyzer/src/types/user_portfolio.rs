@@ -8,4 +8,6 @@ pub struct UserPortfolio {
     pub accounts_metadata: HashMap<String, AccountMetadata>,
     pub accounts: HashMap<String, AnalyzedPortfolio>,
     pub portfolio: AnalyzedPortfolio,
+    pub currency: String,
+    pub rate: f64,
 }

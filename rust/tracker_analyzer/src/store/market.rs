@@ -309,7 +309,17 @@ pub async fn load_exhnage_rate<C: Cache + Send + Sync>(
     cache: &C,
     symbol: &str,
 ) -> Result<f64, MarketError> {
+    let cached_rates = cache.get("rates").await;
+    if let Some(cached_rates) = cached_rates {
+        if let Some(val) = cached_rates.as_object().unwrap().get(symbol) {
+            return Ok(val.as_f64().unwrap());
+        }
+    }
+
     if let Ok(res) = MarketDataClient::fetch_exchange_rates().await {
+        let s: String = serde_json::to_string(&res).unwrap();
+        // println!("[load_exhnage_rate] json: {:?}", s);
+        cache.set("rates", s, 60 * 60 * 24).await;
         if let Some(val) = res.get(symbol) {
             return Ok(val.clone());
         }
