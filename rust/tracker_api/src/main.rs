@@ -6,7 +6,10 @@ use serde_json::json;
 
 use template_utils::load_tera;
 use tera::Context;
-use tracker_analyzer::helpers::analyze_user_portfolio;
+use tracker_analyzer::{
+    helpers::analyze_user_portfolio,
+    store::cache::{default_cache, Cache, DynamoCache},
+};
 
 mod template_utils;
 
@@ -54,8 +57,16 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         .unwrap_or_else(|| "USD");
 
     if let Some(user_id) = event.query_string_parameters().first("user_id") {
+        match event.query_string_parameters().first("ac") {
+            Some("clean-cache") => {
+                let c: std::sync::Arc<DynamoCache> = default_cache();
+                c.clear("prices").await;
+                c.clear("rates").await;
+            }
+            _ => {}
+        }
+
         let portfolio = analyze_user_portfolio(user_id, currency).await.unwrap();
-        // let js = serde_json::to_value(&portfolio).unwrap();
 
         let mut ctx = Context::new();
         // ctx.insert("portfolio", &portfolio);

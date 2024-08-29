@@ -12,6 +12,7 @@ use crate::store::ddb::get_client;
 pub trait Cache {
     fn get(&self, key: &str) -> impl std::future::Future<Output = Option<Value>> + Send;
     fn set(&self, key: &str, value: String, ttl: u64) -> impl std::future::Future<Output = ()>;
+    fn clear(&self, key: &str) -> impl std::future::Future<Output = ()>;
 }
 
 #[derive(Default)]
@@ -126,6 +127,27 @@ impl Cache for DynamoCache {
             println!("ERROR Setting cache for {:?}, err: {:?}", key, err);
         }
     }
+
+    async fn clear(&self, key: &str) {
+        {
+            let mut cache_lock = self.cache.lock().await;
+            cache_lock.remove(key);
+        }
+
+        let client = get_client().await.unwrap();
+
+        let res = client
+            .delete_item()
+            .table_name("tracker-data")
+            .key("PK", AttributeValue::S("CACHE".to_string()))
+            .key("SK", AttributeValue::S(key.to_string()))
+            .send()
+            .await;
+
+        if let Result::Err(err) = res {
+            println!("ERROR Deleting cache for {:?}, err: {:?}", key, err);
+        }
+    }
 }
 
 static CACHE: Lazy<Arc<DynamoCache>> = Lazy::new(|| Arc::new(DynamoCache::new()));
@@ -155,4 +177,6 @@ impl Cache for MockedCache {
     }
 
     async fn set(&self, key: &str, value: String, ttl: u64) {}
+
+    async fn clear(&self, key: &str) {}
 }
