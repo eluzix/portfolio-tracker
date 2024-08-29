@@ -28,7 +28,12 @@
         hx-get="/tracker_api" hx-trigger="click" 
         hx-include="#p-uid"
         hx-on:htmx:config-request="event.detail.parameters.currency='ILS'"
-        hx-target="#main">View as ₪</button>
+        hx-target="#main">View ₪</button>
+
+      <button class="uk-button uk-button-default" 
+        hx-get="/tracker_api" hx-trigger="click" 
+        hx-include="#p-uid"
+        hx-target="#main">View $</button>
 
       <button class="uk-button uk-button-default" 
         hx-confirm="Are you sure you want to clean the cache and reload?"
