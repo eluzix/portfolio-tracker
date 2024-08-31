@@ -18,32 +18,33 @@
     <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" />
 
     <header class="uk-container uk-margin-large-top">
-      <h1 class="uk-heading-divider">Portfolio Tracker/Analyzer</h1>
+      <h1 class="uk-heading-divider">Portfolio Tracker</h1>
     </header>
 
+    <input type="hidden" id="p-page" name="page" value="index" />
     <input type="hidden" id="p-uid" name="user_id" value="1" />
 
     <div class="uk-container uk-padding">
       <button class="uk-button uk-button-default" 
         hx-get="/tracker_api" hx-trigger="click" 
-        hx-include="#p-uid"
+        hx-include="#p-uid, #p-page"
         hx-on:htmx:config-request="event.detail.parameters.currency='ILS'"
         hx-target="#main">View ₪</button>
 
       <button class="uk-button uk-button-default" 
         hx-get="/tracker_api" hx-trigger="click" 
-        hx-include="#p-uid"
+        hx-include="#p-uid, #p-page"
         hx-target="#main">View $</button>
 
       <button class="uk-button uk-button-default" 
         hx-confirm="Are you sure you want to clean the cache and reload?"
         hx-get="/tracker_api" hx-trigger="click" 
-        hx-include="#p-uid"
+        hx-include="#p-uid, #p-page"
         hx-on:htmx:config-request="event.detail.parameters.ac='clean-cache'"
         hx-target="#main">Reload</button>
     </div>
 
-    <main id="main" hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-include="#p-uid"> 
+    <main id="main" hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-include="#p-uid, #p-page"> 
       <div class="uk-container">
         Loading...
       </div>
