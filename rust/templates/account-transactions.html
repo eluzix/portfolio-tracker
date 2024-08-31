@@ -1,7 +1,35 @@
 <div class="uk-container">
   <ul class="uk-list">
     <li>Account name: {{account.name}}</li>
-    <li>Total transactions: {{transactions}}</li>
+    <li>Total transactions: {{transactions | length }}</li>
   </ul>
 
+  <section class="uk-container uk-margin-medium-top">
+    <div class="uk-overflow-auto">
+      <table class="uk-table uk-table-striped uk-table-hover">
+        <thead>
+          <th>ID</th>
+          <th>Symbol</th>
+          <th>Type</th>
+          <th>Date</th>
+          <th>Quantity</th>
+          <th>PPS</th>
+          <th>Value</th>
+        </thead>
+        <tbody>
+          {% for tr in transactions | reverse %}
+          <tr>
+            <td>{{tr.id |truncate(length=15)}}</td>
+            <td>{{tr.symbol}}</td>
+            <td>{{tr.transaction_type}}</td>
+            <td>{{tr.date}}</td>
+            <td>{{tr.quantity}}</td>
+            <td>{{tr.pps | currency_filter()}}</td>
+            <td>{{tr.pps * tr.quantity | currency_filter()}}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
 </div>

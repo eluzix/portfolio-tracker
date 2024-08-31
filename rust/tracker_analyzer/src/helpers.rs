@@ -84,7 +84,7 @@ pub fn merge_dividends(
 pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<UserPortfolio> {
     let cache = default_cache();
     let resp = load_user_data(user_id).await.unwrap();
-    let accounts_metadata: hashmap<string, accountmetadata> = resp
+    let accounts_metadata: HashMap<String, AccountMetadata> = resp
         .1
         .into_iter()
         .map(|account| (account.id.clone(), account))

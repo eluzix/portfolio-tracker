@@ -14,7 +14,7 @@ use tracker_analyzer::{
         cache::{default_cache, Cache, DynamoCache},
         user_data::load_user_data,
     },
-    types::account::AccountMetadata,
+    types::{account::AccountMetadata, transactions::Transaction},
 };
 
 mod template_utils;
@@ -83,16 +83,30 @@ async fn handle_index(user_id: &str, event: Request) -> Result<Response<Body>, E
     Ok(resp)
 }
 
+fn get_query_param_from_current_url(event: &Request, param: &str) -> Option<String> {
+    if let Some(cur_req_url) = event.headers().get("HX-Current-Url") {
+        if let Ok(u) = url::Url::parse(cur_req_url.to_str().unwrap()) {
+            for (k, v) in u.query_pairs() {
+                if k == param {
+                    return Some(v.to_string());
+                }
+            }
+        }
+    }
+
+    None
+}
+
 async fn handle_transactions(user_id: &str, event: Request) -> Result<Response<Body>, Error> {
-    if let Some(account_id) = event.query_string_parameters().first("account_id") {
-        // let cache = default_cache();
+    if let Some(account_id) = get_query_param_from_current_url(&event, "account_id") {
+        let account_id: String = account_id;
         let resp = load_user_data(user_id).await.unwrap();
         let account: AccountMetadata = resp.1.into_iter().find(|a| a.id == account_id).unwrap();
-        let transactions = transactions_by_account(&resp.0);
+        let transactions: HashMap<String, Vec<Transaction>> = transactions_by_account(&resp.0);
 
         let mut ctx = Context::new();
         ctx.insert("account", &account);
-        ctx.insert("transactions", &transactions);
+        ctx.insert("transactions", &transactions.get(&account_id).unwrap());
 
         let tera = load_tera();
         let result = tera.render("account-transactions.html", &ctx);
@@ -122,7 +136,7 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
 
     let page = event
         .query_string_parameters_ref()
-        .and_then(|params| params.first("pg"))
+        .and_then(|params| params.first("page"))
         .unwrap_or_else(|| "index");
 
     if let Some(user_id) = event.query_string_parameters().first("user_id") {
