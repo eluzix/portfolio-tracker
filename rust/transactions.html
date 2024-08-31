@@ -1,0 +1,35 @@
+
+<!doctype html>
+<html lang="en">
+
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/uikit@3.21.9/dist/css/uikit.min.css" />
+    <link rel="apple-touch-icon" sizes="180x180" href="https://tracker.arrakisholdings.com/apple-touch-icon.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://tracker.arrakisholdings.com/favicon-32x32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://tracker.arrakisholdings.com/favicon-16x16.png">
+    <link rel="manifest" href="https://tracker.arrakisholdings.com/site.webmanifest">
+    <title>Portfolio Tracker</title>
+    <script src="https://unpkg.com/htmx.org@2.0.2"></script> <script src="https://unpkg.com/htmx.org@2.0.2"></script>
+  </head>
+
+  <body>
+    <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" />
+
+    <header class="uk-container uk-margin-large-top">
+      <h1 class="uk-heading-divider">Portfolio Tracker - Transactions</h1>
+    </header>
+
+    <input type="hidden" id="p-page" name="page" value="transactions" />
+    <input type="hidden" id="p-uid" name="user_id" value="1" />
+
+    <main id="main" hx-get="/tracker_api" hx-trigger="load" hx-target="this" hx-include="#p-uid, #p-page"> 
+      <div class="uk-container">
+        Loading...
+      </div>
+    </main>
+
+  </body>
+</html>

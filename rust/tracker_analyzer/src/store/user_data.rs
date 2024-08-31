@@ -21,7 +21,7 @@ pub async fn load_user_data(uid: &str) -> Result<(Vec<Transaction>, Vec<AccountM
         .send()
         .await?;
 
-    let mut transactions: Vec<Transaction> = Vec::with_capacity(250);
+    let mut transactions: Vec<Transaction> = Vec::with_capacity(350);
     let mut accounts: Vec<AccountMetadata> = Vec::with_capacity(10);
 
     if let Some(items) = results.items {

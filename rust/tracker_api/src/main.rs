@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use lambda_http::{
     http::{response::Builder, Method, StatusCode},
     run, service_fn, tracing, Body, Error, Request, RequestExt, Response,
@@ -7,8 +9,12 @@ use serde_json::json;
 use template_utils::load_tera;
 use tera::Context;
 use tracker_analyzer::{
-    helpers::analyze_user_portfolio,
-    store::cache::{default_cache, Cache, DynamoCache},
+    helpers::{analyze_user_portfolio, transactions_by_account},
+    store::{
+        cache::{default_cache, Cache, DynamoCache},
+        user_data::load_user_data,
+    },
+    types::account::AccountMetadata,
 };
 
 mod template_utils;
@@ -77,6 +83,33 @@ async fn handle_index(user_id: &str, event: Request) -> Result<Response<Body>, E
     Ok(resp)
 }
 
+async fn handle_transactions(user_id: &str, event: Request) -> Result<Response<Body>, Error> {
+    if let Some(account_id) = event.query_string_parameters().first("account_id") {
+        // let cache = default_cache();
+        let resp = load_user_data(user_id).await.unwrap();
+        let account: AccountMetadata = resp.1.into_iter().find(|a| a.id == account_id).unwrap();
+        let transactions = transactions_by_account(&resp.0);
+
+        let mut ctx = Context::new();
+        ctx.insert("account", &account);
+        ctx.insert("transactions", &transactions);
+
+        let tera = load_tera();
+        let result = tera.render("account-transactions.html", &ctx);
+        let resp = base_response(&event, StatusCode::OK)
+            .body(Body::Text(result.unwrap()))
+            .map_err(Box::new)?;
+        Ok(resp)
+    } else {
+        let resp = base_response(&event, StatusCode::FORBIDDEN)
+            .body(Body::from(
+                json!({"error": "Missing account id"}).to_string(),
+            ))
+            .map_err(Box::new)?;
+        Ok(resp)
+    }
+}
+
 async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
     if event.method() == Method::OPTIONS {
         let resp = base_response(&event, StatusCode::OK)
@@ -96,6 +129,9 @@ async fn function_handler(event: Request) -> Result<Response<Body>, Error> {
         match page {
             "index" => {
                 return handle_index(user_id, event).await;
+            }
+            "transactions" => {
+                return handle_transactions(user_id, event).await;
             }
             _ => {}
         }
