@@ -1,6 +1,10 @@
 <div class="uk-container">
+  <ul class="uk-breadcrumb">
+    <li><a href="https://tracker.arrakisholdings.com/">Home</a></li>
+    <li><span><{{account.name}}</span></li>
+  </ul>
+
   <ul class="uk-list">
-    <li>Account name: {{account.name}}</li>
     <li>Total transactions: {{transactions | length }}</li>
   </ul>
 
@@ -19,7 +23,7 @@
         <tbody>
           {% for tr in transactions | reverse %}
           <tr>
-            <td>{{tr.id |truncate(length=15)}}</td>
+            <td data-tr-id="{{tr.id}}">{{tr.id |truncate(length=15)}}</td>
             <td>{{tr.symbol}}</td>
             <td>{{tr.transaction_type}}</td>
             <td>{{tr.date}}</td>
