@@ -1,9 +1,12 @@
+use std::collections::HashMap;
+
 use crate::helpers::sort_transactions_by_date;
 use crate::store::ddb;
 use crate::types::account::AccountMetadata;
 use crate::types::transactions::Transaction;
 use aws_sdk_dynamodb::types::AttributeValue;
 use aws_sdk_dynamodb::Error;
+use openssl::sha::{sha256, Sha256};
 
 /// Load user data from the DynamoDB table
 /// and sort the transactions by date
@@ -54,4 +57,30 @@ pub async fn load_user_data(uid: &str) -> Result<(Vec<Transaction>, Vec<AccountM
 
     sort_transactions_by_date(&mut transactions);
     Ok((transactions, accounts))
+}
+
+pub async fn add_transaction(uid: &str, tr: &Transaction) -> Result<String, Error> {
+    let hash = sha256(tr.generate_id().as_bytes());
+    let tr_id = hex::encode(hash);
+
+    let mut item: HashMap<String, AttributeValue> = tr.clone().into();
+    item.insert("id".to_string(), AttributeValue::S(tr_id.clone()));
+    item.insert("PK".to_string(), AttributeValue::S(format!("user#{}", uid)));
+    item.insert(
+        "SK".to_string(),
+        AttributeValue::S(format!("transaction#{}", &tr_id)),
+    );
+
+    let client = ddb::get_client().await?;
+
+    let res = client
+        .put_item()
+        .table_name("tracker-data")
+        .set_item(Some(item))
+        .send()
+        .await?;
+
+    println!("[add_transaction] result: {:?}", res);
+
+    Ok(tr_id)
 }

@@ -24,6 +24,22 @@ impl From<&str> for TransactionType {
     }
 }
 
+impl From<String> for TransactionType {
+    fn from(value: String) -> Self {
+        value.as_str().into()
+    }
+}
+
+impl From<&TransactionType> for String {
+    fn from(value: &TransactionType) -> Self {
+        match value {
+            TransactionType::Buy => "buy".to_string(),
+            TransactionType::Sell => "sell".to_string(),
+            TransactionType::Dividend => "dividend".to_string(),
+        }
+    }
+}
+
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Transaction {
     pub id: String,
@@ -71,6 +87,13 @@ impl Transaction {
     pub fn naive_date(&self) -> NaiveDate {
         NaiveDate::parse_from_str(&self.date, "%Y-%m-%d").unwrap()
     }
+
+    pub fn generate_id(&self) -> String {
+        format!(
+            "{}#{}#{}#{:?}#{}#{}",
+            self.account_id, self.symbol, self.date, self.transaction_type, self.quantity, self.pps
+        )
+    }
 }
 
 impl From<&Value> for Transaction {
@@ -103,6 +126,27 @@ impl From<&Value> for Transaction {
                 }
             }
         }
+    }
+}
+
+impl Into<HashMap<String, AttributeValue>> for Transaction {
+    fn into(self) -> HashMap<String, AttributeValue> {
+        let mut item: HashMap<String, AttributeValue> = HashMap::with_capacity(9);
+        item.insert("id".to_string(), AttributeValue::S(self.id));
+        item.insert("account_id".to_string(), AttributeValue::S(self.account_id));
+        item.insert("symbol".to_string(), AttributeValue::S(self.symbol));
+        item.insert("date".to_string(), AttributeValue::S(self.date));
+        item.insert(
+            "transaction_type".to_string(),
+            AttributeValue::S(String::from(&self.transaction_type)),
+        );
+        item.insert(
+            "quantity".to_string(),
+            AttributeValue::N(self.quantity.to_string()),
+        );
+        item.insert("pps".to_string(), AttributeValue::N(self.pps.to_string()));
+
+        item
     }
 }
 
