@@ -22,11 +22,11 @@
     </header>
 
     <main class="uk-margin-large-bottom uk-container" id="main"> 
-      <form hx-post="/tracker_api" id="tr-form">
+      <form hx-post="/tracker_api?user_id=1&page=transactions&ac=add-transaction" id="tr-form">
         <fieldset class="uk-fieldset">
-          <input type="hidden" name="page" value="transactions" />
-          <input type="hidden" name="ac" value="add-transaction" />
-          <input type="hidden" id="p-uid" name="user_id" value="1" />
+          <!-- <input type="hidden" name="page" value="transactions" /> -->
+          <!-- <input type="hidden" name="ac" value="add-transaction" /> -->
+          <!-- <input type="hidden" id="p-uid" name="user_id" value="1" /> -->
 
           <div class="uk-margin">
             <select class="uk-select" name="type">
