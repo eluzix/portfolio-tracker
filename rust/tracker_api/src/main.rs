@@ -139,8 +139,8 @@ async fn handle_add_transaction(
 }
 
 async fn handle_delete_transaction(user_id: &str, event: &Request) -> Option<String> {
-    if let Some(tr_id) = get_query_param_from_current_url(&event, "tr_id") {
-        match user_data::delete_transaction(user_id, tr_id.as_str()).await {
+    if let Some(tr_id) = event.query_string_parameters().first("tr_id") {
+        match user_data::delete_transaction(user_id, tr_id).await {
             Ok(tr_id) => {
                 println!("Deleted transaction id ::::> {:?}", tr_id);
                 return Some(tr_id);
