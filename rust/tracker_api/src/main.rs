@@ -12,10 +12,14 @@ use tracker_analyzer::{
     helpers::{analyze_user_portfolio, transactions_by_account},
     store::{
         cache::{default_cache, Cache, DynamoCache},
-        user_data::load_user_data,
+        user_data::{self, load_user_data},
     },
-    types::{account::AccountMetadata, transactions::Transaction},
+    types::{
+        account::AccountMetadata,
+        transactions::{Transaction, TransactionType},
+    },
 };
+use url::form_urlencoded;
 
 mod template_utils;
 
@@ -102,20 +106,49 @@ async fn handle_add_transaction(
     account_id: &str,
     event: &Request,
 ) -> Option<String> {
-    if let Body::Text(body_str) = event.body() {
-        let json_data: serde_json::Value = serde_json::from_str(body_str).unwrap();
-        println!("handle_add_transaction >>>> json_data: {:?}", json_data);
+    let body: String = match event.body() {
+        Body::Text(b) => b.clone(),
+        Body::Binary(b) => String::from_utf8(b.clone()).unwrap_or_else(|_| "".to_string()),
+        _ => return None,
+    };
+
+    let mut params: HashMap<String, String> = HashMap::new();
+    for (key, value) in form_urlencoded::parse(body.as_bytes()) {
+        params.insert(key.into(), value.into());
     }
 
-    // let tr = Transaction {
-    //     id: "".to_string(),
-    //     account_id: account_id.to_string(),
-    //     symbol: event.body().u,
-    //     date: todo!(),
-    //     transaction_type: todo!(),
-    //     quantity: todo!(),
-    //     pps: todo!(),
-    // };
+    let tr = Transaction {
+        id: "".to_string(),
+        account_id: account_id.to_string(),
+        symbol: params.get("symbol").unwrap().clone(),
+        date: params.get("date").unwrap().clone(),
+        transaction_type: TransactionType::from(params.get("type").unwrap().clone()),
+        quantity: params.get("quantity").unwrap().parse::<u32>().unwrap(),
+        pps: params.get("pps").unwrap().parse::<f64>().unwrap(),
+    };
+
+    match user_data::add_transaction(user_id, &tr).await {
+        Ok(tr_id) => {
+            println!("New transaction id ::::> {:?}", tr_id);
+            return Some(tr_id);
+        }
+        Err(err) => println!("Error adding transaction: {:?}", err),
+    }
+
+    None
+}
+
+async fn handle_delete_transaction(user_id: &str, event: &Request) -> Option<String> {
+    if let Some(tr_id) = get_query_param_from_current_url(&event, "tr_id") {
+        match user_data::delete_transaction(user_id, tr_id.as_str()).await {
+            Ok(tr_id) => {
+                println!("Deleted transaction id ::::> {:?}", tr_id);
+                return Some(tr_id);
+            }
+            Err(err) => println!("Error deleting transaction: {:?}", err),
+        }
+    }
+
     None
 }
 
@@ -126,6 +159,11 @@ async fn handle_transactions(user_id: &str, event: Request) -> Result<Response<B
             Some("add-transaction") => {
                 if let None = handle_add_transaction(user_id, account_id.as_str(), &event).await {
                     println!("Error adding transaction");
+                }
+            }
+            Some("delete-transaction") => {
+                if let None = handle_delete_transaction(user_id, &event).await {
+                    println!("Error deleting transaction");
                 }
             }
             _ => {}

@@ -84,3 +84,18 @@ pub async fn add_transaction(uid: &str, tr: &Transaction) -> Result<String, Erro
 
     Ok(tr_id)
 }
+
+pub async fn delete_transaction(uid: &str, tr_id: &str) -> Result<String, Error> {
+    let client = ddb::get_client().await?;
+    let res = client
+        .delete_item()
+        .table_name("tracker-data")
+        .key("PK", AttributeValue::S(format!("user#{}", uid)))
+        .key("SK", AttributeValue::S(format!("transaction#{}", tr_id)))
+        .send()
+        .await?;
+
+    println!("[delete_transaction] result: {:?}", res);
+
+    Ok(tr_id.to_string())
+}

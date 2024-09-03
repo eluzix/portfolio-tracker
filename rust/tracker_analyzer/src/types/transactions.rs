@@ -137,7 +137,7 @@ impl Into<HashMap<String, AttributeValue>> for Transaction {
         item.insert("symbol".to_string(), AttributeValue::S(self.symbol));
         item.insert("date".to_string(), AttributeValue::S(self.date));
         item.insert(
-            "transaction_type".to_string(),
+            "type".to_string(),
             AttributeValue::S(String::from(&self.transaction_type)),
         );
         item.insert(

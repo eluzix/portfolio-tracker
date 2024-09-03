@@ -4,6 +4,9 @@
     <li><span>{{account.name}}</span></li>
   </ul>
 
+  <input type="hidden" id="p-page" name="page" value="transactions" />
+  <input type="hidden" id="p-uid" name="user_id" value="1" />
+
   <ul class="uk-list">
     <li>Total transactions: {{transactions | length }}</li>
     <li><a href="https://tracker.arrakisholdings.com/new-transaction.html?account_id={{account.id}}">Add new transaction</a></li>
@@ -20,6 +23,7 @@
           <th>Quantity</th>
           <th>PPS</th>
           <th>Value</th>
+          <th></th>
         </thead>
         <tbody>
           {% for tr in transactions | reverse %}
@@ -31,6 +35,7 @@
             <td>{{tr.quantity}}</td>
             <td>{{tr.pps | currency_filter()}}</td>
             <td>{{tr.pps * tr.quantity | currency_filter()}}</td>
+            <td><button hx-get="/tracker_api?ac=delete-transaction&tr_id={{tr.id}}" hx-target="#main" hx-include="#p-uid, #p-page" hx-confirm="Are you sure you want to delete this transaction?">🗑️</button></td>
           </tr>
           {% endfor %}
         </tbody>
