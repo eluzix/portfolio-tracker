@@ -15,17 +15,17 @@
   </head>
 
   <body>
-    <!-- <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" /> -->
+    <base href="https://cksovbwws8.execute-api.us-east-1.amazonaws.com/" />
 
     <header class="uk-container uk-margin-large-top">
       <h1 class="uk-heading-divider">Portfolio Tracker - Add Transaction</h1>
     </header>
 
     <main class="uk-margin-large-bottom uk-container" id="main"> 
-      <form hx-post="/new-transaction.html" id="tr-form">
+      <form hx-post="/tracket_api" id="tr-form">
         <fieldset class="uk-fieldset">
           <input type="hidden" name="page" value="transactions" />
-          <input type="hidden" name="ac" value="save" />
+          <input type="hidden" name="ac" value="add-transaction" />
           <input type="hidden" id="p-uid" name="user_id" value="1" />
 
           <div class="uk-margin">

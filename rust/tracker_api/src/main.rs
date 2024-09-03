@@ -97,9 +97,40 @@ fn get_query_param_from_current_url(event: &Request, param: &str) -> Option<Stri
     None
 }
 
+async fn handle_add_transaction(
+    user_id: &str,
+    account_id: &str,
+    event: &Request,
+) -> Option<String> {
+    if let Body::Text(body_str) = event.body() {
+        let json_data: serde_json::Value = serde_json::from_str(body_str).unwrap();
+        println!("handle_add_transaction >>>> json_data: {:?}", json_data);
+    }
+
+    // let tr = Transaction {
+    //     id: "".to_string(),
+    //     account_id: account_id.to_string(),
+    //     symbol: event.body().u,
+    //     date: todo!(),
+    //     transaction_type: todo!(),
+    //     quantity: todo!(),
+    //     pps: todo!(),
+    // };
+    None
+}
+
 async fn handle_transactions(user_id: &str, event: Request) -> Result<Response<Body>, Error> {
     if let Some(account_id) = get_query_param_from_current_url(&event, "account_id") {
         let account_id: String = account_id;
+        match event.query_string_parameters().first("ac") {
+            Some("add-transaction") => {
+                if let None = handle_add_transaction(user_id, account_id.as_str(), &event).await {
+                    println!("Error adding transaction");
+                }
+            }
+            _ => {}
+        }
+
         let resp = load_user_data(user_id).await.unwrap();
         let account: AccountMetadata = resp.1.into_iter().find(|a| a.id == account_id).unwrap();
         let transactions: HashMap<String, Vec<Transaction>> = transactions_by_account(&resp.0);
