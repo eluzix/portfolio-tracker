@@ -98,9 +98,10 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
     let data_resp = tokio::try_join!(
         market::load_prices(&*cache, all_symbols.as_slice()),
         market::load_dividends(&*cache, &all_symbols),
+        market::load_splits(&*cache, &all_symbols),
     );
 
-    let (prices, dividends) = data_resp.unwrap();
+    let (prices, dividends, splits) = data_resp.unwrap();
 
     let mut rate: f64 = 1.0;
     let mut currency_md: CurrencyMetadata = CurrencyMetadata::default();
@@ -121,6 +122,7 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
         .par_iter_mut()
         .map(|(account_id, transactions)| {
             merge_dividends(transactions, &dividends);
+            merge_dividends(transactions, &splits);
             sort_transactions_by_date(transactions);
             let portfolio_data = analyze_transactions(transactions, &prices).unwrap();
             (account_id, portfolio_data)
@@ -133,6 +135,7 @@ pub async fn analyze_user_portfolio(user_id: &str, currency: &str) -> Option<Use
     }
 
     merge_dividends(&mut transactions, &dividends);
+    merge_dividends(&mut transactions, &splits);
     sort_transactions_by_date(&mut transactions);
     let all_portfolio_data = analyze_transactions(&transactions, &prices).unwrap();
 

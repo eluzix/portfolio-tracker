@@ -76,6 +76,15 @@ pub fn analyze_transactions(
                         tr_value * days_since_transaction as f64 / days_since_inception as f64;
                     weighted_cash_flows.push(-dividend_cash_flow);
                 }
+                TransactionType::Split => {
+                    let count = symbols_count.get(&symbol).unwrap_or(&0.0);
+                    let count = count * transaction.pps;
+                    symbols_count.insert(symbol, count);
+
+                    let current_value =
+                        symbols_values.get(symbol).unwrap_or(&0.0) * transaction.pps;
+                    symbols_values.insert(symbol, current_value);
+                }
             }
         } else {
             println!("No price found for symbol: {}", symbol);

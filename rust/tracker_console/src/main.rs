@@ -141,7 +141,7 @@ async fn test_template() {
     tera.register_filter("currency_filter", currency_filter);
     tera.register_filter("percent_filter", percent_filter);
 
-    let portfolio = analyze_user_portfolio("1", "ILS").await.unwrap();
+    let portfolio = analyze_user_portfolio("1", "USD").await.unwrap();
     let mut ctx = Context::new();
     ctx.insert("portfolio", &portfolio.portfolio);
     ctx.insert("accounts", &portfolio.accounts_metadata);
@@ -169,16 +169,31 @@ async fn test_cur_metadata() {
     println!("for {:?} MD: {:?}", c, res)
 }
 
+async fn test_splits() {
+    // let symbols = ["AAPL", "BRK-B"];
+    let symbols = ["SCHD"];
+
+    let cache = default_cache();
+    let d = market::load_splits(&*cache.clone(), &symbols)
+        .await
+        .unwrap();
+    let dflt: Vec<Transaction> = vec![];
+    let s = d.get("SCHD").unwrap_or_else(|| &dflt);
+
+    println!(">>>>>>>> SCHD splits: {:?}", s);
+}
+
 /// Lists your DynamoDB tables in the default Region or us-east-1 if a default Region isn't set.
 #[tokio::main]
 async fn main() -> Result<(), ()> {
-    // print_all().await;
+    print_all().await;
     // test_price().await;
     // test_market().await;
     // test_dividends().await;
+    // test_splits().await;
     // test_transactions().await;
     // test_exhange().await;
     // test_cur_metadata().await;
-    test_template().await;
+    // test_template().await;
     Ok(())
 }

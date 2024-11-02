@@ -50,6 +50,7 @@ pub trait MarketDataFetcher {
     #![allow(async_fn_in_trait)]
     async fn fetch_prices(symbols: &[String]) -> Option<HashMap<String, SymbolPrice>>;
     async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>>;
+    async fn fetch_splits(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>>;
     async fn fetch_exchange_rates() -> Result<HashMap<String, f64>, MarketError>;
 }
 
@@ -70,6 +71,18 @@ pub struct MarketDividend {
 pub struct MarketDividendsResponse {
     data: Vec<MarketDividend>,
     // pagination: HashMap<String, u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MarketSplit {
+    date: String,
+    split_factor: f64,
+    symbol: String, // pagination: HashMap<String, u32>,
+}
+
+#[derive(Debug, Deserialize)]
+pub struct MarketSplitsResponse {
+    data: Vec<MarketSplit>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, PartialEq)]
@@ -171,6 +184,47 @@ impl MarketDataFetcher for MarketDataClient {
         None
     }
 
+    async fn fetch_splits(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
+        let key: String = tracker_config::get("marketstack_key").unwrap();
+        let client = reqwest::Client::new();
+        let res = client
+            .get("https://api.marketstack.com/v1/splits")
+            .query(&[
+                ("symbols", symbols.join(",")),
+                ("access_key", key),
+                ("limit", "1000".to_string()),
+            ])
+            .send()
+            .await
+            .unwrap()
+            .json::<MarketSplitsResponse>()
+            .await;
+
+        if let Ok(splits_response) = res {
+            let mut res: HashMap<String, Vec<Transaction>> =
+                HashMap::with_capacity(splits_response.data.len());
+
+            for sp in splits_response.data.iter() {
+                let symbol_splits = res
+                    .entry(sp.symbol.clone())
+                    .or_insert(Vec::<Transaction>::new());
+                symbol_splits.push(Transaction {
+                    id: "".to_string(),
+                    account_id: "".to_string(),
+                    symbol: sp.symbol.clone(),
+                    date: sp.date.clone(),
+                    transaction_type: TransactionType::Split,
+                    quantity: 0,
+                    pps: sp.split_factor,
+                });
+            }
+
+            return Some(res);
+        }
+
+        None
+    }
+
     async fn fetch_exchange_rates() -> Result<HashMap<String, f64>, MarketError> {
         let key: String = tracker_config::get("exchangerates_key").unwrap();
 
@@ -218,6 +272,10 @@ impl MarketDataFetcher for MarketDataClient {
     }
 
     async fn fetch_dividends(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
+        None
+    }
+
+    async fn fetch_splits(symbols: &[String]) -> Option<HashMap<String, Vec<Transaction>>> {
         None
     }
 
@@ -320,6 +378,59 @@ pub async fn load_dividends<C: Cache + Send + Sync>(
     cache.set("dividends", s, 60 * 60 * 24 * 3).await;
 
     Ok(dividends)
+}
+
+pub async fn load_splits<C: Cache + Send + Sync>(
+    cache: &C,
+    symbols: &[&str],
+) -> Result<HashMap<String, Vec<Transaction>>, MarketError> {
+    let mut splits: HashMap<String, Vec<Transaction>> = HashMap::with_capacity(symbols.len());
+    let cached_splits = cache.get("splits").await;
+    let mut missing_symbols: HashSet<String> = symbols.iter().map(|s| s.to_string()).collect();
+
+    if let Some(cached_splits) = cached_splits {
+        for (symbol, transactions) in cached_splits.as_object().unwrap() {
+            missing_symbols.remove(symbol);
+            let div_list = transactions
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|tr| Transaction::from(tr))
+                .collect();
+            splits.insert(symbol.clone(), div_list);
+        }
+
+        if missing_symbols.is_empty() {
+            return Ok(splits);
+        }
+    }
+
+    if missing_symbols.is_empty() {
+        return Ok(splits);
+    }
+
+    let missing_symbols: Vec<String> = missing_symbols.into_iter().collect();
+    println!(
+        "[fetch_splits] >>>> Going to network with: {:?}",
+        missing_symbols
+    );
+    let market_splits = MarketDataClient::fetch_splits(&missing_symbols).await;
+    // println!("[fetch_dividends] market_dividend: {:?}", market_dividend);
+
+    if let Some(market_splits) = market_splits {
+        splits.extend(market_splits);
+    }
+
+    for lookup_symbol in missing_symbols {
+        if !splits.contains_key(&lookup_symbol) {
+            splits.insert(lookup_symbol.clone(), Vec::with_capacity(0));
+        }
+    }
+
+    let s: String = serde_json::to_string(&splits).unwrap();
+    cache.set("splits", s, 60 * 60 * 24 * 3).await;
+
+    Ok(splits)
 }
 
 pub async fn load_exhnage_rate<C: Cache + Send + Sync>(

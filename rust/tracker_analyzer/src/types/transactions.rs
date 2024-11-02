@@ -11,6 +11,7 @@ pub enum TransactionType {
     Buy,
     Sell,
     Dividend,
+    Split,
 }
 
 impl From<&str> for TransactionType {
@@ -19,6 +20,7 @@ impl From<&str> for TransactionType {
             "buy" => TransactionType::Buy,
             "sell" => TransactionType::Sell,
             "dividend" => TransactionType::Dividend,
+            "split" => TransactionType::Split,
             _ => panic!("Invalid transaction type"),
         }
     }
@@ -36,6 +38,7 @@ impl From<&TransactionType> for String {
             TransactionType::Buy => "buy".to_string(),
             TransactionType::Sell => "sell".to_string(),
             TransactionType::Dividend => "dividend".to_string(),
+            TransactionType::Split => "split".to_string(),
         }
     }
 }
