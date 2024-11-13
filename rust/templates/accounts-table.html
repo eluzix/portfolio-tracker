@@ -40,7 +40,7 @@
         {% for account_id, account in accounts %}
         {% set ac=accounts_stat[account_id]%}
         <tr>
-          <td><a href="https://tracker.arrakisholdings.com/transactions.html?account_id={{account.id}}">{{ account.name }}</a></td>
+          <td title="{{account.institution}} - {{account.institution_id}}"><a href="https://tracker.arrakisholdings.com/transactions.html?account_id={{account.id}}">{{ account.name }} <span class="uk-text-small">({{account.institution_id}})</span></a></td>
           <td>{{ac.last_transaction}}</td>
           <td>{{ac.total_invested * rate | currency_filter(sign=currency.symbol)}}</td>
           <td>{{ac.total_withdrawn * rate | currency_filter(sign=currency.symbol)}}</td>
