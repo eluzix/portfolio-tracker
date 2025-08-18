@@ -1,0 +1,31 @@
+package types
+
+const formatYYYYMMDD = "2006-01-02"
+
+type TransactionType string
+
+const (
+	TransactionTypeBuy TransactionType = "buy"
+)
+
+type Transaction struct {
+	Id        string `json:"id"`
+	AccountId string `json:"account_id"`
+	Symbol    string `json:"symbol"`
+	Date      string `json:"date"`
+	Type      string `json:"transaction_type"`
+	Quantity  uint32 `json:"quantity"`
+	Pps       uint32 `json:"pps"`
+}
+
+type Account struct {
+	Id            string    `json:"id"`
+	Name          string    `json:"name"`
+	Owner         string    `json:"owner"`
+	Institution   string    `json:"institution"`
+	InstitutionId string    `json:"institution_id"`
+	Description   *string   `json:"description"`
+	Tags          []string  `json:"tags"`
+	CreatedAt     *string   `json:"created_at"`
+	UpdatedAt     *string   `json:"updated_at"`
+}

@@ -1,4 +1,6 @@
 use std::collections::HashMap;
+use std::fs::File;
+use std::io::{BufWriter, Write};
 
 use numfmt::{Formatter, Precision};
 use serde::Deserialize;
@@ -14,13 +16,49 @@ use tracker_analyzer::store::{market, tracker_config};
 use tracker_analyzer::types::transactions::Transaction;
 
 async fn print_all() {
-    let portfolio = analyze_user_portfolio("1", "USD").await.unwrap();
-
-    for (account_id, portfolio_data) in portfolio.accounts.iter() {
-        let account_data = portfolio.accounts_metadata.get(account_id).unwrap();
-        println!("--------\nAccount: {:?}", account_data);
-        // println!("Portfolio: {:?}", portfolio_data);
+    let resp = load_user_data("1").await.unwrap();
+    
+    // Dump transactions
+    let file = File::create("transactions.jsonl").expect("Failed to create transactions.jsonl");
+    let mut writer = BufWriter::new(file);
+    
+    for transaction in resp.0 {
+        let mut json_value = serde_json::to_value(&transaction).expect("Failed to serialize transaction");
+        
+        // Convert pps from f64 to u32 cents (e.g., 32.42 -> 3242, 22.1 -> 2210)
+        if let Some(pps_val) = json_value.get_mut("pps") {
+            if let Some(pps_f64) = pps_val.as_f64() {
+                let pps_cents = (pps_f64 * 100.0).round() as u32;
+                *pps_val = serde_json::Value::Number(serde_json::Number::from(pps_cents));
+            }
+        }
+        
+        let json_line = serde_json::to_string(&json_value).expect("Failed to serialize modified transaction");
+        writeln!(writer, "{}", json_line).expect("Failed to write to file");
     }
+    
+    writer.flush().expect("Failed to flush writer");
+    println!("Transactions dumped to transactions.jsonl");
+
+    // Dump account metadata
+    let account_file = File::create("accounts.jsonl").expect("Failed to create accounts.jsonl");
+    let mut account_writer = BufWriter::new(account_file);
+    
+    for account in resp.1 {
+        let json_line = serde_json::to_string(&account).expect("Failed to serialize account");
+        writeln!(account_writer, "{}", json_line).expect("Failed to write to file");
+    }
+    
+    account_writer.flush().expect("Failed to flush account writer");
+    println!("Account metadata dumped to accounts.jsonl");
+
+    // let portfolio = analyze_user_portfolio("1", "USD").await.unwrap();
+    //
+    // for (account_id, portfolio_data) in portfolio.accounts.iter() {
+    //     let account_data = portfolio.accounts_metadata.get(account_id).unwrap();
+    //     println!("--------\nAccount: {:?}", account_data);
+    //     // println!("Portfolio: {:?}", portfolio_data);
+    // }
 
     // let all_portfolio_data = portfolio.portfolio;
     // println!("--------\nAll Accounts");
