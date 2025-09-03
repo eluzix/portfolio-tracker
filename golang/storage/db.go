@@ -25,6 +25,10 @@ func OpenDatabase() (*sql.DB, func()) {
 		panic(fmt.Sprintf("Error creating temporary directory: %s\n", err))
 	}
 	// defer os.RemoveAll(dir)
+	err = os.Chmod(dir, 0744)
+	if err != nil {
+		panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
+	}
 
 	dbPath := filepath.Join(dir, dbName)
 
@@ -46,6 +50,13 @@ func OpenDatabase() (*sql.DB, func()) {
 		connector.Close()
 		db.Close()
 	}
+
+	// _, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+	// _, err = db.Exec("PRAGMA journal_mode = WAL")
+	// if err != nil {
+	// 	cleanup()
+	// 	panic(fmt.Sprintf("error setting WAL mode: %s\n", err))
+	// }
 
 	return db, cleanup
 }

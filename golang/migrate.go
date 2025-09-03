@@ -16,10 +16,12 @@ const (
 	MIGRATE_TRANSACTIONS = "transactions"
 	MIGRATE_ACCOUNTS     = "accounts"
 	MIGRATE_BOTH         = "both"
+	COUNT_TRANSACTIONS   = "count_t"
 )
 
 // Set this to control which migration runs
-var MIGRATION_TYPE = MIGRATE_ACCOUNTS // Change this to MIGRATE_ACCOUNTS or MIGRATE_BOTH
+// var MIGRATION_TYPE = COUNT_TRANSACTIONS
+var MIGRATION_TYPE = MIGRATE_TRANSACTIONS
 
 func main() {
 	db, cleanup := storage.OpenDatabase()
@@ -33,33 +35,45 @@ func main() {
 	case MIGRATE_BOTH:
 		migrateAccounts(db)
 		migrateTransactions(db)
+	case COUNT_TRANSACTIONS:
+		countTransactions(db)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown migration type: %s\n", MIGRATION_TYPE)
 		os.Exit(1)
 	}
 }
 
+func countTransactions(db *sql.DB) {
+	var count int
+	err := db.QueryRow("SELECT COUNT(*) FROM transactions").Scan(&count)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to count transactions: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Printf("Total transactions in database: %d\n", count)
+}
+
 func migrateTransactions(db *sql.DB) {
 	fmt.Println("=== Migrating Transactions ===")
 
 	// Create transactions table if it doesn't exist
-	createTableSQL := `
-	CREATE TABLE IF NOT EXISTS transactions (
-		id TEXT PRIMARY KEY,
-		account_id TEXT NOT NULL,
-		symbol TEXT NOT NULL,
-		date TEXT NOT NULL,
-		transaction_type TEXT NOT NULL,
-		quantity INTEGER NOT NULL,
-		pps INTEGER NOT NULL
-	)`
-
-	_, err := db.Exec(createTableSQL)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create transactions table: %v\n", err)
-		os.Exit(1)
-	}
-	fmt.Println("Transactions table created or already exists")
+	// createTableSQL := `
+	// CREATE TABLE IF NOT EXISTS transactions (
+	// 	id TEXT PRIMARY KEY,
+	// 	account_id TEXT NOT NULL,
+	// 	symbol TEXT NOT NULL,
+	// 	date TEXT NOT NULL,
+	// 	transaction_type TEXT NOT NULL,
+	// 	quantity INTEGER NOT NULL,
+	// 	pps INTEGER NOT NULL
+	// )`
+	//
+	// _, err := db.Exec(createTableSQL)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "failed to create transactions table: %v\n", err)
+	// 	os.Exit(1)
+	// }
+	// fmt.Println("Transactions table created or already exists")
 
 	// Open and read transactions.jsonl file
 	file, err := os.Open("transactions.jsonl")
@@ -70,11 +84,25 @@ func migrateTransactions(db *sql.DB) {
 	defer file.Close()
 
 	// Prepare insert statement
+
+	tx, err := db.Begin()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to start transaction: %v\n", err)
+		os.Exit(1)
+	}
+	defer tx.Rollback()
+
+	// _, err = tx.Exec("DEL transactions")
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "failed to truncate transactions table: %v\n", err)
+	// 	os.Exit(1)
+	// }
+
 	insertSQL := `
 	INSERT OR REPLACE INTO transactions (id, account_id, symbol, date, transaction_type, quantity, pps)
 	VALUES (?, ?, ?, ?, ?, ?, ?)`
 
-	stmt, err := db.Prepare(insertSQL)
+	stmt, err := tx.Prepare(insertSQL)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "failed to prepare insert statement: %v\n", err)
 		os.Exit(1)
@@ -119,6 +147,11 @@ func migrateTransactions(db *sql.DB) {
 
 	if err := scanner.Err(); err != nil {
 		fmt.Fprintf(os.Stderr, "error reading file: %v\n", err)
+		os.Exit(1)
+	}
+
+	if err = tx.Commit(); err != nil {
+		fmt.Fprintf(os.Stderr, "error commiting transaction: %v\n", err)
 		os.Exit(1)
 	}
 
