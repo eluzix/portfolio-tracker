@@ -140,7 +140,7 @@ func migrateTransactions(db *sql.DB) {
 		}
 
 		transactionCount++
-		if transactionCount%100 == 0 {
+		if transactionCount%5 == 0 {
 			fmt.Printf("Inserted %d transactions...\n", transactionCount)
 		}
 	}

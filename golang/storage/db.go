@@ -13,8 +13,9 @@ func OpenDatabase() (*sql.DB, func()) {
 	dbName := "tracker.db"
 	primaryUrl := os.Getenv("TRACKER_DATABASE_URL")
 	authToken := os.Getenv("TRACKER_AUTH_TOKEN")
-	fmt.Printf("url: %s\n", primaryUrl)
-	fmt.Printf("token: %s\n", authToken)
+
+	// fmt.Printf("url: %s\n", primaryUrl)
+	// fmt.Printf("token: %s\n", authToken)
 	if primaryUrl == "" || authToken == "" {
 		panic("Missing env vars: TRACKER_DATABASE_URL and TRACKER_AUTH_TOKEN")
 	}
@@ -34,6 +35,7 @@ func OpenDatabase() (*sql.DB, func()) {
 
 	connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
 		libsql.WithAuthToken(authToken),
+		libsql.WithReadYourWrites(false),
 	)
 	if err != nil {
 		// fmt.Println("Error creating connector:", err)
@@ -46,9 +48,9 @@ func OpenDatabase() (*sql.DB, func()) {
 	// defer db.Close()
 
 	cleanup := func() {
-		os.RemoveAll(dir)
 		connector.Close()
 		db.Close()
+		os.RemoveAll(dir)
 	}
 
 	// _, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
