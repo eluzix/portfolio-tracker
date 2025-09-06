@@ -10,17 +10,20 @@ const formatYYYYMMDD = "2006-01-02"
 type TransactionType string
 
 const (
-	TransactionTypeBuy TransactionType = "buy"
+	TransactionTypeBuy      TransactionType = "buy"
+	TransactionTypeSell     TransactionType = "sell"
+	TransactionTypeDividend TransactionType = "dividend"
+	TransactionTypeSplit    TransactionType = "split"
 )
 
 type Transaction struct {
-	Id        string `json:"id"`
-	AccountId string `json:"account_id"`
-	Symbol    string `json:"symbol"`
-	Date      string `json:"date"`
-	Type      string `json:"transaction_type"`
-	Quantity  uint32 `json:"quantity"`
-	Pps       uint32 `json:"pps"`
+	Id        string          `json:"id"`
+	AccountId string          `json:"account_id"`
+	Symbol    string          `json:"symbol"`
+	Date      string          `json:"date"`
+	Type      TransactionType `json:"transaction_type"`
+	Quantity  int32           `json:"quantity"`
+	Pps       int32           `json:"pps"`
 }
 
 func (t Transaction) AsDate() time.Time {
