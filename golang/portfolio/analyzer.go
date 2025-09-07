@@ -1,7 +1,6 @@
 package analyzer
 
 import (
-	"fmt"
 	"time"
 	"tracker/types"
 )
@@ -36,7 +35,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 
 		symbolPrice, ok := pricesTable[t.Symbol]
 		if !ok {
-			fmt.Printf("[AnalyzeTransactions] for %s missing price in table\n", t.Symbol)
+			// fmt.Printf("[AnalyzeTransactions] for %s missing price in table\n", t.Symbol)
 			continue
 		}
 
@@ -120,7 +119,11 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		portfolio.Gain = int32(portfolioGainValue / totalInvested)
 	}
 
-	portfolio.ModifiedDietzYield = int32(portfolioGainValue / (totalInvested + weigthedCashFlow))
+	if totalInvested+weigthedCashFlow == 0 {
+		portfolio.ModifiedDietzYield = 0
+	} else {
+		portfolio.ModifiedDietzYield = int32(portfolioGainValue / (totalInvested + weigthedCashFlow))
+	}
 
 	return portfolio, nil
 }
