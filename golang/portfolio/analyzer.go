@@ -48,7 +48,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		trValue := int64(t.Quantity * t.Pps)
 
 		daysSinceTransaction := int64(today.Sub(t.AsDate()).Hours() / 24)
-		trCashFlow := trValue * daysSinceInception / daysSinceTransaction
+		trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 
 		// switch tp := t.Type; tp {
 		switch t.Type {
