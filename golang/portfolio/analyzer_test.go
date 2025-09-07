@@ -7,10 +7,12 @@ import (
 
 func TestFirstLastTransaction(t *testing.T) {
 	transactions := []types.Transaction{
-		{Id: "id1"},
-		{Id: "id2"},
+		{Id: "id1", Date: "2025-01-01", Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
+		{Id: "id2", Date: "2025-02-01", Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
 	}
-	portfolio, err := AnalyzeTransactions(transactions)
+	portfolio, err := AnalyzeTransactions(transactions, map[string]types.SymbolPrice{
+		"AAPL": {AdjPrice: 12},
+	})
 	if err != nil {
 		t.Fatalf("Error wasn't nil: %e\n", err)
 	}
