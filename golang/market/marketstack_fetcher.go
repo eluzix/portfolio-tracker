@@ -1,6 +1,8 @@
 package market
 
 import (
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -145,8 +147,10 @@ func (m *MarketStackDataFetcher) FetchDividends(symbols []string) (map[string][]
 		// Convert dividend amount to int32 (assuming in cents)
 		ppsInt := int32(div.Dividend * 100)
 
+		tid := fmt.Sprintf("%s#%s#%s#%d", div.Symbol, div.Date, types.TransactionTypeDividend, ppsInt)
+		hash := sha1.Sum([]byte(tid))
 		transaction := types.Transaction{
-			Id:        "",
+			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    div.Symbol,
 			Date:      div.Date,
@@ -195,8 +199,10 @@ func (m *MarketStackDataFetcher) FetchSplits(symbols []string) (map[string][]typ
 		// Convert split factor to int32 (multiply by 100 for precision)
 		ppsInt := int32(split.SplitFactor * 100)
 
+		tid := fmt.Sprintf("%s#%s#%s#%d", split.Symbol, split.Date, types.TransactionTypeSplit, ppsInt)
+		hash := sha1.Sum([]byte(tid))
 		transaction := types.Transaction{
-			Id:        "",
+			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    split.Symbol,
 			Date:      split.Date,

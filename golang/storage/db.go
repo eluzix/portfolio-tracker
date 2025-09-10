@@ -9,6 +9,59 @@ import (
 	"github.com/tursodatabase/go-libsql"
 )
 
+func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
+	dbName := "tracker.db"
+	var dir string
+	var err error
+
+	if tmp {
+		// todo move from tmp directory to wellknown location so it will not be deleted
+		dir, err = os.MkdirTemp("", "libsql-*")
+		if err != nil {
+			panic(fmt.Sprintf("Error creating temporary directory: %s\n", err))
+		}
+
+		err = os.Chmod(dir, 0744)
+		if err != nil {
+			panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
+		}
+	} else {
+		dir = "data"
+		_ = os.Mkdir(dir, os.ModePerm)
+		// if err != nil {
+		// 	panic(fmt.Sprintf("Error creating local data directory %s : %s\n", dir, err))
+		// }
+
+	}
+
+	dbPath := filepath.Join(dir, dbName)
+
+	db, err := sql.Open("libsql", "file:"+dbPath)
+
+	if err != nil {
+		panic(fmt.Sprintf("Error creating db: %s\n", err))
+	}
+
+	// defer connector.Close()
+
+	cleanup := func() {
+		db.Close()
+		if tmp {
+			os.RemoveAll(dir)
+		}
+	}
+
+	rows, err := db.Query("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+	// rows, err := db.Query("PRAGMA journal_mode = WAL")
+	if err != nil {
+		cleanup()
+		panic(fmt.Sprintf("error setting WAL mode: %s\n", err))
+	}
+	defer rows.Close()
+
+	return db, cleanup
+}
+
 func OpenDatabase() (*sql.DB, func()) {
 	dbName := "tracker.db"
 	primaryUrl := os.Getenv("TRACKER_DATABASE_URL")
@@ -53,12 +106,13 @@ func OpenDatabase() (*sql.DB, func()) {
 		os.RemoveAll(dir)
 	}
 
-	// _, err = db.Exec("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
-	// _, err = db.Exec("PRAGMA journal_mode = WAL")
-	// if err != nil {
-	// 	cleanup()
-	// 	panic(fmt.Sprintf("error setting WAL mode: %s\n", err))
-	// }
+	rows, err := db.Query("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")
+	// rows, err := db.Query("PRAGMA journal_mode = WAL")
+	if err != nil {
+		cleanup()
+		panic(fmt.Sprintf("error setting WAL mode: %s\n", err))
+	}
+	defer rows.Close()
 
 	return db, cleanup
 }

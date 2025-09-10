@@ -17,14 +17,17 @@ const (
 	MIGRATE_ACCOUNTS     = "accounts"
 	MIGRATE_BOTH         = "both"
 	COUNT_TRANSACTIONS   = "count_t"
+	CREATE_TABLES        = "create_tables"
 )
 
 // Set this to control which migration runs
 // var MIGRATION_TYPE = COUNT_TRANSACTIONS
-var MIGRATION_TYPE = MIGRATE_TRANSACTIONS
+// var MIGRATION_TYPE = MIGRATE_TRANSACTIONS
+var MIGRATION_TYPE = CREATE_TABLES
 
 func main() {
-	db, cleanup := storage.OpenDatabase()
+	// db, cleanup := storage.OpenDatabase()
+	db, cleanup := storage.OpenLocalDatabase(false)
 	defer cleanup()
 
 	switch MIGRATION_TYPE {
@@ -37,6 +40,8 @@ func main() {
 		migrateTransactions(db)
 	case COUNT_TRANSACTIONS:
 		countTransactions(db)
+	case CREATE_TABLES:
+		createTables(db)
 	default:
 		fmt.Fprintf(os.Stderr, "Unknown migration type: %s\n", MIGRATION_TYPE)
 		os.Exit(1)
@@ -53,19 +58,87 @@ func countTransactions(db *sql.DB) {
 	fmt.Printf("Total transactions in database: %d\n", count)
 }
 
+func createTables(db *sql.DB) {
+	fmt.Println("=== Creating Tables ===")
+
+	// Create transactions table if it doesn't exist
+	_, err := db.Exec(`
+	CREATE TABLE IF NOT EXISTS transactions (
+		id TEXT PRIMARY KEY,
+		account_id TEXT NOT NULL,
+		symbol TEXT NOT NULL,
+		date TEXT NOT NULL,
+		transaction_type TEXT NOT NULL,
+		quantity INTEGER NOT NULL,
+		pps INTEGER NOT NULL
+	)`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create transactions table: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Transactions table created or already exists")
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS dividends_splits (
+		id TEXT PRIMARY KEY,
+		account_id TEXT NOT NULL,
+		symbol TEXT NOT NULL,
+		date TEXT NOT NULL,
+		transaction_type TEXT NOT NULL,
+		quantity INTEGER NOT NULL,
+		pps INTEGER NOT NULL
+	)`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create dividends_splits table: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("dividends_splits table created or already exists")
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS accounts (
+		id TEXT PRIMARY KEY,
+		name TEXT NOT NULL,
+		owner TEXT NOT NULL,
+		institution TEXT NOT NULL,
+		institution_id TEXT NOT NULL,
+		description TEXT,
+		tags TEXT,
+		created_at TEXT,
+		updated_at TEXT
+		)`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create accounts table: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Accounts table created or already exists")
+
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS prices (
+		symbol TEXT PRIMARY KEY,
+		adj_close INTEGER NOT NULL,
+		created_at DATETIME NULL
+		)`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create prices table: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Prices table created or already exists")
+
+}
+
 func migrateTransactions(db *sql.DB) {
 	fmt.Println("=== Migrating Transactions ===")
 
 	// Create transactions table if it doesn't exist
 	// createTableSQL := `
-	// CREATE TABLE IF NOT EXISTS transactions (
-	// 	id TEXT PRIMARY KEY,
-	// 	account_id TEXT NOT NULL,
-	// 	symbol TEXT NOT NULL,
-	// 	date TEXT NOT NULL,
-	// 	transaction_type TEXT NOT NULL,
-	// 	quantity INTEGER NOT NULL,
-	// 	pps INTEGER NOT NULL
+	// create table if not exists transactions (
+	// 	id text primary key,
+	// 	account_id text not null,
+	// 	symbol text not null,
+	// 	date text not null,
+	// 	transaction_type text not null,
+	// 	quantity integer not null,
+	// 	pps integer not null
 	// )`
 	//
 	// _, err := db.Exec(createTableSQL)
