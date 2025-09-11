@@ -124,6 +124,25 @@ func createTables(db *sql.DB) {
 	}
 	fmt.Println("Prices table created or already exists")
 
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS rates (
+		symbol TEXT PRIMARY KEY,
+		value INTEGER NOT NULL,
+		created_at DATETIME NULL
+		)`)
+	_, err = db.Exec(`
+	CREATE TABLE IF NOT EXISTS rates_history (
+		id TEXT PRIMARY KEY,
+		symbol TEXT NOT NULL,
+		value INTEGER NOT NULL,
+		created_at DATE NULL
+		)`)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "failed to create rates/history table: %v\n", err)
+		os.Exit(1)
+	}
+	fmt.Println("Rates+history table created or already exists")
+
 }
 
 func migrateTransactions(db *sql.DB) {
