@@ -1,37 +1,37 @@
 package types
 
 import (
-	"fmt"
 	"time"
 )
 
-const formatYYYYMMDD = "2006-01-02"
+const formatYYYYMMDD = "2006-01-02T00:00:00Z"
 
 type TransactionType string
 
 const (
-	TransactionTypeBuy      TransactionType = "buy"
-	TransactionTypeSell     TransactionType = "sell"
-	TransactionTypeDividend TransactionType = "dividend"
-	TransactionTypeSplit    TransactionType = "split"
+	TransactionTypeBuy      TransactionType = "Buy"
+	TransactionTypeSell     TransactionType = "Sell"
+	TransactionTypeDividend TransactionType = "Dividend"
+	TransactionTypeSplit    TransactionType = "Split"
 )
 
 type Transaction struct {
 	Id        string          `json:"id"`
 	AccountId string          `json:"account_id"`
 	Symbol    string          `json:"symbol"`
-	Date      string          `json:"date"`
+	Date      time.Time       `json:"date"`
 	Type      TransactionType `json:"transaction_type"`
 	Quantity  int32           `json:"quantity"`
 	Pps       int32           `json:"pps"`
 }
 
 func (t Transaction) AsDate() time.Time {
-	ret, err := time.Parse(formatYYYYMMDD, t.Date)
-	if err != nil {
-		panic(fmt.Sprintf("Error formating date %s for transaction %s\n", t.Date, t.Id))
-	}
-	return ret
+	return t.Date
+	// ret, err := time.Parse(formatYYYYMMDD, t.Date)
+	// if err != nil {
+	// 	panic(fmt.Sprintf("Error formating date %s for transaction %s\n", t.Date, t.Id))
+	// }
+	// return ret
 }
 
 type Account struct {

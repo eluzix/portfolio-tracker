@@ -1,6 +1,8 @@
 package analyzer
 
 import (
+	"fmt"
+	"strings"
 	"time"
 	"tracker/types"
 )
@@ -12,8 +14,8 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		return portfolio, nil
 	}
 
-	symbolsValues := make(map[string]int64, 10)
-	symbolsCount := make(map[string]int32, 10)
+	symbolsValues := make(map[string]int64, len(pricesTable))
+	symbolsCount := make(map[string]int32, len(pricesTable))
 
 	//todo add first and last transaction to portfolio
 	firstTransaction := transactions[0]
@@ -32,54 +34,55 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 	var weigthedCashFlow int64
 
 	for _, t := range transactions {
+		symbol := strings.ToLower(t.Symbol)
 
-		symbolPrice, ok := pricesTable[t.Symbol]
+		symbolPrice, ok := pricesTable[symbol]
 		if !ok {
-			// fmt.Printf("[AnalyzeTransactions] for %s missing price in table\n", t.Symbol)
+			fmt.Printf("[AnalyzeTransactions] for %s missing price in table\n", t.Symbol)
 			continue
 		}
 
-		symbolValue, ok := symbolsValues[t.Symbol]
+		symbolValue, ok := symbolsValues[symbol]
 		if !ok {
 			symbolValue = 0
 		}
 
 		trValue := int64(t.Quantity * t.Pps)
-
 		daysSinceTransaction := int64(today.Sub(t.AsDate()).Hours() / 24)
-		trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 
 		// switch tp := t.Type; tp {
 		switch t.Type {
 		case types.TransactionTypeBuy:
 			totalInvested += trValue
+			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 			weigthedCashFlow += trCashFlow
 
 			symbolValue += int64(t.Quantity * symbolPrice.AdjPrice)
-			symbolsValues[t.Symbol] = symbolValue
+			symbolsValues[symbol] = symbolValue
 
-			count, ok := symbolsCount[t.Symbol]
+			count, ok := symbolsCount[symbol]
 			if !ok {
 				count = 0
 			}
 			count += t.Quantity
-			symbolsCount[t.Symbol] = count
+			symbolsCount[symbol] = count
 
 		case types.TransactionTypeSell:
 			totalWithdrawn += trValue
+			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 			weigthedCashFlow -= trCashFlow
 			symbolValue -= int64(t.Quantity * symbolPrice.AdjPrice)
-			symbolsValues[t.Symbol] = symbolValue
+			symbolsValues[symbol] = symbolValue
 
-			count, ok := symbolsCount[t.Symbol]
+			count, ok := symbolsCount[symbol]
 			if !ok {
 				count = 0
 			}
 			count -= t.Quantity
-			symbolsCount[t.Symbol] = count
+			symbolsCount[symbol] = count
 
 		case types.TransactionTypeDividend:
-			count, ok := symbolsCount[t.Symbol]
+			count, ok := symbolsCount[symbol]
 			if !ok {
 				count = 0
 			}
@@ -89,15 +92,15 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 			weigthedCashFlow -= int64(dividendCashFlow)
 
 		case types.TransactionTypeSplit:
-			count, ok := symbolsCount[t.Symbol]
+			count, ok := symbolsCount[symbol]
 			if !ok {
 				count = 0
 			}
 			count *= t.Pps
-			symbolsCount[t.Symbol] = count
+			symbolsCount[symbol] = count
 
 			symbolValue -= int64(t.Quantity * t.Pps)
-			symbolsValues[t.Symbol] = symbolValue
+			symbolsValues[symbol] = symbolValue
 
 		}
 	}

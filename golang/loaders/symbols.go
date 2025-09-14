@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"os"
+	"tracker/types"
 )
 
 func LoadAllSymbols(db *sql.DB) ([]string, error) {
@@ -27,4 +28,19 @@ func LoadAllSymbols(db *sql.DB) ([]string, error) {
 	}
 
 	return symbols, nil
+}
+
+func SymbolsFromTransactions(transactions *[]types.Transaction) []string {
+
+	symbols := make(map[string]struct{}, 0)
+	for _, tr := range *transactions {
+		symbols[tr.Symbol] = struct{}{}
+	}
+
+	ret := make([]string, 0, len(symbols))
+	for k := range symbols {
+		ret = append(ret, k)
+	}
+
+	return ret
 }
