@@ -11,6 +11,7 @@ import (
 	"os"
 	"strings"
 	"tracker/types"
+	"tracker/utils"
 )
 
 // MarketStackDataFetcher implements DateFetcher using MarketStack and Exchange Rates APIs
@@ -153,7 +154,7 @@ func (m *MarketStackDataFetcher) FetchDividends(symbols []string) (map[string][]
 			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    div.Symbol,
-			Date:      div.Date,
+			Date:      utils.StringToDate(div.Date),
 			Type:      types.TransactionTypeDividend,
 			Quantity:  0,
 			Pps:       ppsInt,
@@ -205,7 +206,7 @@ func (m *MarketStackDataFetcher) FetchSplits(symbols []string) (map[string][]typ
 			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    split.Symbol,
-			Date:      split.Date,
+			Date:      utils.StringToDate(split.Date),
 			Type:      types.TransactionTypeSplit,
 			Quantity:  0,
 			Pps:       ppsInt,

@@ -1,4 +1,4 @@
-package analyzer
+package portfolio
 
 import (
 	"fmt"
@@ -8,12 +8,13 @@ import (
 	"testing"
 	"time"
 	"tracker/types"
+	"tracker/utils"
 )
 
 func TestFirstLastTransaction(t *testing.T) {
 	transactions := []types.Transaction{
-		{Id: "id1", Date: "2025-01-01", Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
-		{Id: "id2", Date: "2025-02-01", Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
+		{Id: "id1", Date: utils.StringToDate("2025-01-01"), Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
+		{Id: "id2", Date: utils.StringToDate("2025-02-01"), Type: types.TransactionTypeBuy, Symbol: "AAPL", Pps: 1, Quantity: 1},
 	}
 	portfolio, err := AnalyzeTransactions(transactions, map[string]types.SymbolPrice{
 		"AAPL": {AdjPrice: 12},
@@ -57,7 +58,7 @@ func TestTotals(t *testing.T) {
 			Type:      types.TransactionTypeBuy,
 			Quantity:  2,
 			Pps:       100,
-			Date:      "2024-01-01",
+			Date:      utils.StringToDate("2024-01-01"),
 		},
 		{
 			AccountId: "1",
@@ -65,7 +66,7 @@ func TestTotals(t *testing.T) {
 			Type:      types.TransactionTypeBuy,
 			Quantity:  3,
 			Pps:       100,
-			Date:      "2024-02-01",
+			Date:      utils.StringToDate("2024-02-01"),
 		},
 		{
 			AccountId: "1",
@@ -73,7 +74,7 @@ func TestTotals(t *testing.T) {
 			Type:      types.TransactionTypeBuy,
 			Quantity:  1,
 			Pps:       100,
-			Date:      "2024-03-01",
+			Date:      utils.StringToDate("2024-03-01"),
 		},
 		{
 			AccountId: "1",
@@ -81,7 +82,7 @@ func TestTotals(t *testing.T) {
 			Type:      types.TransactionTypeSell,
 			Quantity:  4,
 			Pps:       100,
-			Date:      "2024-04-01",
+			Date:      utils.StringToDate("2024-04-01"),
 		},
 	}
 
@@ -111,7 +112,7 @@ func TestDividends(t *testing.T) {
 			Type:      types.TransactionTypeBuy,
 			Quantity:  2,
 			Pps:       100,
-			Date:      "2024-01-01",
+			Date:      utils.StringToDate("2024-01-01"),
 		},
 		{
 			AccountId: "1",
@@ -119,7 +120,7 @@ func TestDividends(t *testing.T) {
 			Type:      types.TransactionTypeBuy,
 			Quantity:  3,
 			Pps:       100,
-			Date:      "2024-02-01",
+			Date:      utils.StringToDate("2024-02-01"),
 		},
 		{
 			AccountId: "1",
@@ -127,7 +128,7 @@ func TestDividends(t *testing.T) {
 			Type:      types.TransactionTypeDividend,
 			Quantity:  0,
 			Pps:       10,
-			Date:      "2024-02-15",
+			Date:      utils.StringToDate("2024-02-15"),
 		},
 		{
 			AccountId: "1",
@@ -135,7 +136,7 @@ func TestDividends(t *testing.T) {
 			Type:      types.TransactionTypeSell,
 			Quantity:  4,
 			Pps:       100,
-			Date:      "2024-05-01",
+			Date:      utils.StringToDate("2024-05-01"),
 		},
 	}
 
@@ -168,28 +169,28 @@ func TestSymbolsValue(t *testing.T) {
 			Type:     types.TransactionTypeBuy,
 			Quantity: int32(rand.Intn(95) + 5), // 5-100
 			Pps:      1,
-			Date:     "2023-01-01",
+			Date:     utils.StringToDate("2023-01-01"),
 		},
 		{
 			Symbol:   "AAPL",
 			Type:     types.TransactionTypeBuy,
 			Quantity: int32(rand.Intn(95) + 5), // 5-100
 			Pps:      1,
-			Date:     "2023-02-01",
+			Date:     utils.StringToDate("2023-02-01"),
 		},
 		{
 			Symbol:   "AAPL",
 			Type:     types.TransactionTypeBuy,
 			Quantity: int32(rand.Intn(95) + 5), // 5-100
 			Pps:      1,
-			Date:     "2023-03-01",
+			Date:     utils.StringToDate("2023-03-01"),
 		},
 		{
 			Symbol:   "AAPL",
 			Type:     types.TransactionTypeSell,
 			Quantity: int32(rand.Intn(5) + 5), // 5-10
 			Pps:      1,
-			Date:     "2023-04-01",
+			Date:     utils.StringToDate("2023-04-01"),
 		},
 	}
 
@@ -236,13 +237,13 @@ func TestYields(t *testing.T) {
 	}
 
 	// Create dates going back in time
-	dates := make([]string, numTransactions)
+	dates := make([]time.Time, numTransactions)
 	for i := 0; i < numTransactions; i++ {
 		date := today.AddDate(-(i + 1), 0, 0) // Go back i+1 years
-		dates[numTransactions-1-i] = date.Format("2006-01-02")
+		dates[numTransactions-1-i] = date
 	}
 
-	firstTransactionDate, _ := time.Parse("2006-01-02", dates[0])
+	firstTransactionDate := dates[0]
 	daysSinceInception := int64(today.Sub(firstTransactionDate).Hours() / 24)
 
 	transactions := make([]types.Transaction, numTransactions)
@@ -262,7 +263,7 @@ func TestYields(t *testing.T) {
 	var weightedCashFlows int64
 
 	for _, t := range transactions {
-		transactionDate, _ := time.Parse("2006-01-02", t.Date)
+		transactionDate := t.Date
 		daysSinceTransaction := int64(today.Sub(transactionDate).Hours() / 24)
 
 		switch t.Type {
@@ -335,7 +336,7 @@ func generateRandomTransactions(seed int64, count int) []types.Transaction {
 			Id:        fmt.Sprintf("tx_%d", i),
 			AccountId: fmt.Sprintf("acc_%d", r.Intn(5)+1),
 			Symbol:    symbols[r.Intn(len(symbols))],
-			Date:      date.Format("2006-01-02"),
+			Date:      date,
 			Type:      transactionTypes[r.Intn(len(transactionTypes))],
 			Quantity:  int32(r.Intn(1000) + 1), // 1-1000
 			Pps:       int32(r.Intn(500) + 1),  // 1-500
@@ -349,29 +350,29 @@ func generateRandomTransactions(seed int64, count int) []types.Transaction {
 func generateEdgeCaseTransactions() []types.Transaction {
 	return []types.Transaction{
 		// Zero values
-		{Id: "zero_qty", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 0, Pps: 100},
-		{Id: "zero_pps", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 0},
+		{Id: "zero_qty", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 0, Pps: 100},
+		{Id: "zero_pps", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 0},
 
 		// Maximum values
-		{Id: "max_qty", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: math.MaxInt32, Pps: 1},
-		{Id: "max_pps", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 1, Pps: math.MaxInt32},
+		{Id: "max_qty", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: math.MaxInt32, Pps: 1},
+		{Id: "max_pps", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 1, Pps: math.MaxInt32},
 
 		// Edge dates
-		{Id: "old_date", Symbol: "AAPL", Date: "1900-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "future_date", Symbol: "AAPL", Date: "2100-12-31", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "same_date_1", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "same_date_2", Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeSell, Quantity: 50, Pps: 100},
+		{Id: "old_date", Symbol: "AAPL", Date: utils.StringToDate("1900-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "future_date", Symbol: "AAPL", Date: utils.StringToDate("2100-12-31"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "same_date_1", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "same_date_2", Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeSell, Quantity: 50, Pps: 100},
 
 		// Edge symbols
-		{Id: "empty_symbol", Symbol: "", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "long_symbol", Symbol: strings.Repeat("A", 100), Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "special_chars", Symbol: "AAPL!@#$%", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
-		{Id: "unicode_symbol", Symbol: "AAPL🚀", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "empty_symbol", Symbol: "", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "long_symbol", Symbol: strings.Repeat("A", 100), Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "special_chars", Symbol: "AAPL!@#$%", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
+		{Id: "unicode_symbol", Symbol: "AAPL🚀", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 100},
 
 		// Business logic edge cases
-		{Id: "sell_before_buy", Symbol: "SELL", Date: "2024-01-01", Type: types.TransactionTypeSell, Quantity: 100, Pps: 100},
-		{Id: "dividend_no_shares", Symbol: "DIV", Date: "2024-01-01", Type: types.TransactionTypeDividend, Quantity: 0, Pps: 10},
-		{Id: "split_no_shares", Symbol: "SPLIT", Date: "2024-01-01", Type: types.TransactionTypeSplit, Quantity: 0, Pps: 2},
+		{Id: "sell_before_buy", Symbol: "SELL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeSell, Quantity: 100, Pps: 100},
+		{Id: "dividend_no_shares", Symbol: "DIV", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeDividend, Quantity: 0, Pps: 10},
+		{Id: "split_no_shares", Symbol: "SPLIT", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeSplit, Quantity: 0, Pps: 2},
 	}
 }
 
@@ -551,8 +552,8 @@ func TestFuzzInvariants(t *testing.T) {
 			name: "simple_buy_sell",
 			setup: func() ([]types.Transaction, map[string]types.SymbolPrice) {
 				transactions := []types.Transaction{
-					{Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 150},
-					{Symbol: "AAPL", Date: "2024-02-01", Type: types.TransactionTypeSell, Quantity: 50, Pps: 160},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 150},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-02-01"), Type: types.TransactionTypeSell, Quantity: 50, Pps: 160},
 				}
 				priceTable := map[string]types.SymbolPrice{
 					"AAPL": {Symbol: "AAPL", AdjPrice: 170},
@@ -573,10 +574,10 @@ func TestFuzzInvariants(t *testing.T) {
 			name: "dividend_scenario",
 			setup: func() ([]types.Transaction, map[string]types.SymbolPrice) {
 				transactions := []types.Transaction{
-					{Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 150},
-					{Symbol: "AAPL", Date: "2024-02-01", Type: types.TransactionTypeDividend, Quantity: 0, Pps: 5},
-					{Symbol: "AAPL", Date: "2024-03-01", Type: types.TransactionTypeBuy, Quantity: 50, Pps: 160},
-					{Symbol: "AAPL", Date: "2024-04-01", Type: types.TransactionTypeDividend, Quantity: 0, Pps: 6},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 150},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-02-01"), Type: types.TransactionTypeDividend, Quantity: 0, Pps: 5},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-03-01"), Type: types.TransactionTypeBuy, Quantity: 50, Pps: 160},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-04-01"), Type: types.TransactionTypeDividend, Quantity: 0, Pps: 6},
 				}
 				priceTable := map[string]types.SymbolPrice{
 					"AAPL": {Symbol: "AAPL", AdjPrice: 170},
@@ -588,9 +589,9 @@ func TestFuzzInvariants(t *testing.T) {
 			name: "split_scenario",
 			setup: func() ([]types.Transaction, map[string]types.SymbolPrice) {
 				transactions := []types.Transaction{
-					{Symbol: "AAPL", Date: "2024-01-01", Type: types.TransactionTypeBuy, Quantity: 100, Pps: 200},
-					{Symbol: "AAPL", Date: "2024-02-01", Type: types.TransactionTypeSplit, Quantity: 0, Pps: 2},
-					{Symbol: "AAPL", Date: "2024-03-01", Type: types.TransactionTypeSell, Quantity: 50, Pps: 110},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-01-01"), Type: types.TransactionTypeBuy, Quantity: 100, Pps: 200},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-02-01"), Type: types.TransactionTypeSplit, Quantity: 0, Pps: 2},
+					{Symbol: "AAPL", Date: utils.StringToDate("2024-03-01"), Type: types.TransactionTypeSell, Quantity: 50, Pps: 110},
 				}
 				priceTable := map[string]types.SymbolPrice{
 					"AAPL": {Symbol: "AAPL", AdjPrice: 105},
@@ -671,7 +672,7 @@ func TestFuzzMalformedDates(t *testing.T) {
 				{
 					Id:       "test",
 					Symbol:   "AAPL",
-					Date:     date,
+					Date:     utils.StringToDate(date),
 					Type:     types.TransactionTypeBuy,
 					Quantity: 100,
 					Pps:      100,

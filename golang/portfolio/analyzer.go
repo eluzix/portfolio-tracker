@@ -1,4 +1,4 @@
-package analyzer
+package portfolio
 
 import (
 	"fmt"
