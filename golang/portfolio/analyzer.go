@@ -2,6 +2,7 @@ package portfolio
 
 import (
 	"fmt"
+	"math"
 	"strings"
 	"time"
 	"tracker/types"
@@ -14,7 +15,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		return portfolio, nil
 	}
 
-	symbolsValues := make(map[string]int64, len(pricesTable))
+	// symbolsValues := make(map[string]int64, len(pricesTable))
 	symbolsCount := make(map[string]int32, len(pricesTable))
 
 	//todo add first and last transaction to portfolio
@@ -31,34 +32,25 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 	var totalWithdrawn int64
 	var totalDividends int64
 	var portfolioValue int64
-	var weigthedCashFlow int64
+	var weigthedCashFlow int64 = 0
 
 	for _, t := range transactions {
 		symbol := strings.ToLower(t.Symbol)
 
-		symbolPrice, ok := pricesTable[symbol]
+		_, ok := pricesTable[symbol]
 		if !ok {
 			fmt.Printf("[AnalyzeTransactions] for %s missing price in table\n", t.Symbol)
 			continue
 		}
 
-		symbolValue, ok := symbolsValues[symbol]
-		if !ok {
-			symbolValue = 0
-		}
-
 		trValue := int64(t.Quantity * t.Pps)
 		daysSinceTransaction := int64(today.Sub(t.AsDate()).Hours() / 24)
 
-		// switch tp := t.Type; tp {
 		switch t.Type {
 		case types.TransactionTypeBuy:
 			totalInvested += trValue
 			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 			weigthedCashFlow += trCashFlow
-
-			symbolValue += int64(t.Quantity * symbolPrice.AdjPrice)
-			symbolsValues[symbol] = symbolValue
 
 			count, ok := symbolsCount[symbol]
 			if !ok {
@@ -71,8 +63,6 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 			totalWithdrawn += trValue
 			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
 			weigthedCashFlow -= trCashFlow
-			symbolValue -= int64(t.Quantity * symbolPrice.AdjPrice)
-			symbolsValues[symbol] = symbolValue
 
 			count, ok := symbolsCount[symbol]
 			if !ok {
@@ -96,17 +86,16 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 			if !ok {
 				count = 0
 			}
-			count *= t.Pps
+
+			pps := float32(t.Pps) / 100
+			count = int32(float32(count) * pps)
 			symbolsCount[symbol] = count
-
-			symbolValue -= int64(t.Quantity * t.Pps)
-			symbolsValues[symbol] = symbolValue
-
 		}
 	}
 
-	for _, value := range symbolsValues {
-		portfolioValue += value
+	for s, c := range symbolsCount {
+		sp := pricesTable[s]
+		portfolioValue += int64(sp.AdjPrice * c)
 	}
 
 	portfolio.Value = portfolioValue
@@ -117,16 +106,19 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 	portfolioGainValue := (portfolioValue + totalDividends + totalWithdrawn) - totalInvested
 	portfolio.GainValue = portfolioGainValue
 	if totalInvested == 0 {
-		portfolio.GainValue = 0
+		portfolio.Gain = 0
 	} else {
-		portfolio.Gain = int32(portfolioGainValue / totalInvested)
+		portfolio.Gain = float32(portfolioGainValue) / float32(totalInvested)
 	}
 
 	if totalInvested+weigthedCashFlow == 0 {
 		portfolio.ModifiedDietzYield = 0
 	} else {
-		portfolio.ModifiedDietzYield = int32(portfolioGainValue / (totalInvested + weigthedCashFlow))
+		portfolio.ModifiedDietzYield = float32(float64(portfolioGainValue) / float64(totalInvested+weigthedCashFlow))
 	}
+
+	yearsSinceInception := float64(daysSinceInception) / 365
+	portfolio.AnnualizedYield = float32(math.Pow(1+float64(portfolio.Gain), 1/yearsSinceInception)) - 1
 
 	return portfolio, nil
 }

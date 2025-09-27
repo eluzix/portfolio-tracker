@@ -6,12 +6,14 @@ type AnalyzedPortfolio struct {
 	TotalWithdrawn     int64
 	TotalDividends     int64
 	GainValue          int64
-	Gain               int32
-	AnnualizedYield    int32
-	ModifiedDietzYield int32
+	Gain               float32
+	AnnualizedYield    float32
+	ModifiedDietzYield float32
 
 	FirstTransaction Transaction
 	LastTransaction  Transaction
+
+	SymbolsCount map[string]int32
 }
 
 func NewAnalyzedPortfolio() AnalyzedPortfolio {
