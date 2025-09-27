@@ -49,7 +49,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		switch t.Type {
 		case types.TransactionTypeBuy:
 			totalInvested += trValue
-			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
+			trCashFlow := trValue * (daysSinceInception - daysSinceTransaction) / daysSinceInception
 			weigthedCashFlow += trCashFlow
 
 			count, ok := symbolsCount[symbol]
@@ -61,7 +61,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 
 		case types.TransactionTypeSell:
 			totalWithdrawn += trValue
-			trCashFlow := trValue * daysSinceTransaction / daysSinceInception
+			trCashFlow := trValue * (daysSinceInception - daysSinceTransaction) / daysSinceInception
 			weigthedCashFlow -= trCashFlow
 
 			count, ok := symbolsCount[symbol]
@@ -78,8 +78,8 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 			}
 			trValue := t.Pps * count
 			totalDividends += int64(trValue)
-			dividendCashFlow := trValue * int32(daysSinceInception) / int32(daysSinceTransaction)
-			weigthedCashFlow -= int64(dividendCashFlow)
+			dividendCashFlow := int64(trValue) * (daysSinceInception - daysSinceTransaction) / daysSinceInception
+			weigthedCashFlow += dividendCashFlow
 
 		case types.TransactionTypeSplit:
 			count, ok := symbolsCount[symbol]
@@ -111,7 +111,7 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 		portfolio.Gain = float32(portfolioGainValue) / float32(totalInvested)
 	}
 
-	if totalInvested+weigthedCashFlow == 0 {
+	if weigthedCashFlow == 0 {
 		portfolio.ModifiedDietzYield = 0
 	} else {
 		portfolio.ModifiedDietzYield = float32(float64(portfolioGainValue) / float64(totalInvested+weigthedCashFlow))
