@@ -36,13 +36,13 @@ func AccountsPage(accounts *[]types.Account, accountsData map[string]types.Analy
 		table.SetCell(i+1, 1, tview.NewTableCell(ac.Name))
 
 		acData, _ := accountsData[ac.Id]
-		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested)))
-		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn)))
-		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends)))
-		table.SetCell(i+1, 5, tview.NewTableCell(utils.ToYieldString(acData.Gain)))
-		table.SetCell(i+1, 6, tview.NewTableCell(utils.ToYieldString(acData.AnnualizedYield)))
-		table.SetCell(i+1, 7, tview.NewTableCell(utils.ToYieldString(acData.ModifiedDietzYield)))
-		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value)))
+		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 5, tview.NewTableCell(utils.ToYieldString(acData.Gain)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 6, tview.NewTableCell(utils.ToYieldString(acData.AnnualizedYield)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 7, tview.NewTableCell(utils.ToYieldString(acData.ModifiedDietzYield)).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value)).SetAlign(tview.AlignRight))
 	}
 
 	table.SetSelectionChangedFunc(func(row, column int) {
