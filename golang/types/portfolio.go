@@ -14,6 +14,7 @@ type AnalyzedPortfolio struct {
 	LastTransaction  Transaction
 
 	SymbolsCount map[string]int32
+	Transactions []Transaction
 }
 
 func NewAnalyzedPortfolio() AnalyzedPortfolio {

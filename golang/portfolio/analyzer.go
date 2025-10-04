@@ -120,5 +120,8 @@ func AnalyzeTransactions(transactions []types.Transaction, pricesTable map[strin
 	yearsSinceInception := float64(daysSinceInception) / 365
 	portfolio.AnnualizedYield = float32(math.Pow(1+float64(portfolio.Gain), 1/yearsSinceInception)) - 1
 
+	portfolio.SymbolsCount = symbolsCount
+	portfolio.Transactions = transactions
+
 	return portfolio, nil
 }

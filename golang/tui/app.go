@@ -12,22 +12,6 @@ import (
 	"github.com/rivo/tview"
 )
 
-func SingleAccountPage(account types.Account, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) tview.Primitive {
-	newPrimitive := func(text string) tview.Primitive {
-		return tview.NewTextView().
-			SetTextAlign(tview.AlignCenter).
-			SetText(text)
-	}
-
-	grid := tview.NewGrid().
-		SetRows(100, 20).
-		SetColumns(100, 20).
-		SetBorders(true).
-		AddItem(newPrimitive("head"), 1, 0, 1, 1, 0, 0, true).
-		AddItem(newPrimitive("body"), 0, 0, 1, 1, 0, 0, false)
-	return grid
-}
-
 func AccountsPage(accounts *[]types.Account, accountsData map[string]types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) *tview.Table {
 	var selectedAccount int
 
@@ -59,13 +43,13 @@ func AccountsPage(accounts *[]types.Account, accountsData map[string]types.Analy
 		table.SetCell(i+1, 1, tview.NewTableCell(ac.Name))
 
 		acData, _ := accountsData[ac.Id]
-		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested)).SetStyle(ts))
-		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn)).SetStyle(ts))
-		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends)).SetStyle(ts))
+		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested, 0)).SetStyle(ts))
+		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn, 0)).SetStyle(ts))
+		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends, 0)).SetStyle(ts))
 		table.SetCell(i+1, 5, tview.NewTableCell(utils.ToYieldString(acData.Gain)).SetStyle(ts))
 		table.SetCell(i+1, 6, tview.NewTableCell(utils.ToYieldString(acData.AnnualizedYield)).SetStyle(ts))
 		table.SetCell(i+1, 7, tview.NewTableCell(utils.ToYieldString(acData.ModifiedDietzYield)).SetStyle(ts))
-		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value)).SetStyle(ts))
+		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value, 0)).SetStyle(ts))
 	}
 
 	table.SetSelectionChangedFunc(func(row, column int) {
@@ -87,7 +71,7 @@ func AccountsPage(accounts *[]types.Account, accountsData map[string]types.Analy
 		if a.Id == "" {
 			return
 		}
-		pages.AddAndSwitchToPage("account", SingleAccountPage(a, accountsData[a.Id], app, pages), false)
+		pages.AddAndSwitchToPage("account", SingleAccountPage(a, accountsData[a.Id], app, pages), true)
 	})
 	return table
 }
