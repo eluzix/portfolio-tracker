@@ -18,38 +18,38 @@ func AccountsPage(accounts *[]types.Account, accountsData map[string]types.Analy
 	table := tview.NewTable().SetContent(nil)
 	table.SetBorder(true).SetBorderColor(tcell.ColorGreenYellow)
 	table.SetSelectable(true, false)
-	table.SetSeparator('|').SetBorderPadding(0, 1, 1, 1)
+	table.SetSeparator('|').SetBorderPadding(2, 2, 3, 3)
 
 	hs := tcell.StyleDefault.
 		Background(tcell.ColorOrangeRed).
 		Foreground(tcell.ColorGreenYellow).Bold(true)
 
-	table.SetCell(0, 0, tview.NewTableCell("ID").SetStyle(hs))
-	table.SetCell(0, 1, tview.NewTableCell("Account Name").SetStyle(hs))
-	table.SetCell(0, 2, tview.NewTableCell("Total Invested").SetStyle(hs))
-	table.SetCell(0, 3, tview.NewTableCell("Total Withdrawn").SetStyle(hs))
-	table.SetCell(0, 4, tview.NewTableCell("Total Dividends").SetStyle(hs))
-	table.SetCell(0, 5, tview.NewTableCell("Gain").SetStyle(hs))
-	table.SetCell(0, 6, tview.NewTableCell("Annualized Yield").SetStyle(hs))
-	table.SetCell(0, 7, tview.NewTableCell("Dietz Yield").SetStyle(hs))
-	table.SetCell(0, 8, tview.NewTableCell("Value").SetStyle(hs))
+	table.SetCell(0, 0, tview.NewTableCell("ID").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignLeft))
+	table.SetCell(0, 1, tview.NewTableCell("Account Name").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignLeft))
+	table.SetCell(0, 2, tview.NewTableCell("Total Invested").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignRight))
+	table.SetCell(0, 3, tview.NewTableCell("Total Withdrawn").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignRight))
+	table.SetCell(0, 4, tview.NewTableCell("Total Dividends").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignRight))
+	table.SetCell(0, 5, tview.NewTableCell("Gain").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignRight))
+	table.SetCell(0, 6, tview.NewTableCell("Annualized Yield").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignRight))
+	table.SetCell(0, 7, tview.NewTableCell("Dietz Yield").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignRight))
+	table.SetCell(0, 8, tview.NewTableCell("Value").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignRight))
 	for i, ac := range *accounts {
 		ts := tcell.StyleDefault
 		if i == len(*accounts) {
 			ts = ts.Foreground(tcell.ColorRed)
 		}
 
-		table.SetCell(i+1, 0, tview.NewTableCell(ac.Id))
-		table.SetCell(i+1, 1, tview.NewTableCell(ac.Name))
+		table.SetCell(i+1, 0, tview.NewTableCell(ac.Id).SetExpansion(1).SetAlign(tview.AlignLeft))
+		table.SetCell(i+1, 1, tview.NewTableCell(ac.Name).SetExpansion(2).SetAlign(tview.AlignLeft))
 
 		acData, _ := accountsData[ac.Id]
-		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested, 0)).SetStyle(ts))
-		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn, 0)).SetStyle(ts))
-		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends, 0)).SetStyle(ts))
-		table.SetCell(i+1, 5, tview.NewTableCell(utils.ToYieldString(acData.Gain)).SetStyle(ts))
-		table.SetCell(i+1, 6, tview.NewTableCell(utils.ToYieldString(acData.AnnualizedYield)).SetStyle(ts))
-		table.SetCell(i+1, 7, tview.NewTableCell(utils.ToYieldString(acData.ModifiedDietzYield)).SetStyle(ts))
-		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value, 0)).SetStyle(ts))
+		table.SetCell(i+1, 2, tview.NewTableCell(utils.ToCurrencyString(acData.TotalInvested, 0)).SetStyle(ts).SetExpansion(2).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 3, tview.NewTableCell(utils.ToCurrencyString(acData.TotalWithdrawn, 0)).SetStyle(ts).SetExpansion(2).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 4, tview.NewTableCell(utils.ToCurrencyString(acData.TotalDividends, 0)).SetStyle(ts).SetExpansion(2).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 5, tview.NewTableCell(utils.ToYieldString(acData.Gain)).SetStyle(ts).SetExpansion(1).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 6, tview.NewTableCell(utils.ToYieldString(acData.AnnualizedYield)).SetStyle(ts).SetExpansion(1).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 7, tview.NewTableCell(utils.ToYieldString(acData.ModifiedDietzYield)).SetStyle(ts).SetExpansion(1).SetAlign(tview.AlignRight))
+		table.SetCell(i+1, 8, tview.NewTableCell(utils.ToCurrencyString(acData.Value, 0)).SetStyle(ts).SetExpansion(2).SetAlign(tview.AlignRight))
 	}
 
 	table.SetSelectionChangedFunc(func(row, column int) {
