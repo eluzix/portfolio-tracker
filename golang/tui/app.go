@@ -12,7 +12,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func AccountsPage(accounts *[]types.Account, accountsData map[string]types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) *tview.Table {
+func AccountsPage(db *sql.DB, accounts *[]types.Account, accountsData map[string]types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) *tview.Table {
 	var selectedAccount int
 
 	table := tview.NewTable().SetContent(nil)
@@ -71,7 +71,7 @@ func AccountsPage(accounts *[]types.Account, accountsData map[string]types.Analy
 		if a.Id == "" {
 			return
 		}
-		pages.AddAndSwitchToPage("account", SingleAccountPage(a, accountsData[a.Id], app, pages), true)
+		pages.AddAndSwitchToPage("account", SingleAccountPage(db, a, accountsData[a.Id], app, pages), true)
 	})
 	return table
 }
@@ -97,7 +97,7 @@ func StartApp(db *sql.DB) {
 
 	app := tview.NewApplication()
 	pages := tview.NewPages()
-	pages.AddPage("Accounts", AccountsPage(accounts, accountsData, app, pages), true, true)
+	pages.AddPage("Accounts", AccountsPage(db, accounts, accountsData, app, pages), true, true)
 
 	if err := app.SetRoot(pages, true).SetFocus(pages).Run(); err != nil {
 		panic(err)

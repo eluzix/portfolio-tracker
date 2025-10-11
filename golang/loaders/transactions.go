@@ -8,6 +8,7 @@ import (
 	"time"
 	"tracker/logging"
 	"tracker/types"
+	"tracker/utils"
 )
 
 func AllTransactions(db *sql.DB) (*[]types.Transaction, error) {
@@ -76,4 +77,22 @@ func DividendsAndSplits(db *sql.DB, symbols []string, after time.Time) (*[]types
 
 	return &transactions, nil
 
+}
+
+func AddTransaction(db *sql.DB, tr types.Transaction) error {
+	if tr.Id == "" {
+		tr.Id = utils.GenerateUUID()
+	}
+	_, err := db.Exec("insert into transactions (id,account_id,symbol,date,transaction_type,quantity,pps) values (?,?,?,?,?,?,?)", tr.Id, tr.AccountId, tr.Symbol, tr.Date, tr.Type, tr.Quantity, tr.Pps)
+
+	return err
+}
+
+func DeleteTransaction(db *sql.DB, id string) error {
+	if id == "" {
+		return nil
+	}
+
+	_, err := db.Exec("delete from transactions where id=?", id)
+	return err
 }

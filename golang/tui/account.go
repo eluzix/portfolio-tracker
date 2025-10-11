@@ -1,8 +1,12 @@
 package tui
 
 import (
+	"database/sql"
 	"fmt"
 	"sort"
+	"strconv"
+	"time"
+	"tracker/loaders"
 	"tracker/types"
 	"tracker/utils"
 
@@ -10,7 +14,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func TransactionsTable(portfolio types.AnalyzedPortfolio, pages *tview.Pages) *tview.Table {
+func TransactionsTable(db *sql.DB, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) *tview.Table {
 	transactionsTable := tview.NewTable().SetContent(nil)
 	transactionsTable.SetBorder(true).SetBorderColor(tcell.ColorGreenYellow)
 	transactionsTable.SetSelectable(true, false)
@@ -50,16 +54,31 @@ func TransactionsTable(portfolio types.AnalyzedPortfolio, pages *tview.Pages) *t
 			transactionsTable.Select(1, column)
 		}
 	})
-	transactionsTable.Select(1, 0).SetFixed(1, 2).SetDoneFunc(func(key tcell.Key) {
-		if key == tcell.KeyEscape {
-			pages.SwitchToPage("Accounts")
+
+	transactionsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlD {
+			row, _ := transactionsTable.GetSelection()
+			if row >= 1 && row <= len(sortedTransactions) {
+				transaction := sortedTransactions[row-1]
+				showDeleteConfirmation(db, app, pages, transaction)
+			}
+			return nil
 		}
+		if event.Key() == tcell.KeyEscape {
+			pages.SwitchToPage("Accounts")
+			return nil
+		}
+		return event
 	})
+
+	app.SetFocus(transactionsTable)
+
+	transactionsTable.Select(1, 0).SetFixed(1, 2)
 
 	return transactionsTable
 }
 
-func SingleAccountPage(account types.Account, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) tview.Primitive {
+func SingleAccountPage(db *sql.DB, account types.Account, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) tview.Primitive {
 	accountTitle := tview.NewTextView().
 		SetTextAlign(tview.AlignCenter).
 		SetText(account.Name).
@@ -90,11 +109,216 @@ func SingleAccountPage(account types.Account, portfolio types.AnalyzedPortfolio,
 		AddItem(symbolsSection, 2, 1, false), 0, 2, false)
 	head.SetBackgroundColor(tcell.ColorLightYellow)
 
-	transactionsTable := TransactionsTable(portfolio, pages)
+	transactionsTable := TransactionsTable(db, portfolio, app, pages)
+
+	addButton := tview.NewButton("Add Transaction")
+	addButton.SetBackgroundColor(tcell.ColorDarkGreen)
+	addButton.SetSelectedFunc(func() {
+		showAddTransactionModal(db, app, pages, account)
+	})
+
+	buttonSection := tview.NewFlex().SetDirection(tview.FlexColumn).
+		AddItem(nil, 0, 1, false).
+		AddItem(addButton, 20, 1, false).
+		AddItem(nil, 0, 1, false)
 
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).SetFullScreen(true)
 	layout.AddItem(head, 0, 1, false)
+	layout.AddItem(buttonSection, 1, 1, false)
 	layout.AddItem(transactionsTable, 0, 4, true)
 
+	// Set up tab navigation between button and table
+	addButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(transactionsTable)
+			return nil
+		}
+		if event.Key() == tcell.KeyEscape {
+			pages.SwitchToPage("Accounts")
+			return nil
+		}
+		return event
+	})
+
+	transactionsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyCtrlD {
+			row, _ := transactionsTable.GetSelection()
+			if row >= 1 && row <= len(portfolio.Transactions) {
+				sortedTransactions := make([]types.Transaction, len(portfolio.Transactions))
+				copy(sortedTransactions, portfolio.Transactions)
+				sort.Slice(sortedTransactions, func(i, j int) bool {
+					return sortedTransactions[i].Date.After(sortedTransactions[j].Date)
+				})
+				transaction := sortedTransactions[row-1]
+				if transaction.Type == types.TransactionTypeBuy || transaction.Type == types.TransactionTypeSell {
+					showDeleteConfirmation(db, app, pages, transaction)
+				}
+			}
+			return nil
+		}
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(addButton)
+			return nil
+		}
+		if event.Key() == tcell.KeyEscape {
+			pages.SwitchToPage("Accounts")
+			return nil
+		}
+		return event
+	})
+
 	return layout
+}
+
+func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pages, account types.Account) {
+	form := tview.NewForm()
+	form.SetBorder(true).SetTitle("Add Transaction").SetTitleAlign(tview.AlignLeft)
+	form.SetBackgroundColor(tcell.ColorBlack)
+
+	form.AddInputField("Date (YYYY-MM-DD)", time.Now().Format("2006-01-02"), 20, nil, nil)
+	form.AddDropDown("Type", []string{"Buy", "Sell"}, 0, nil)
+	form.AddInputField("Symbol", "", 20, nil, nil)
+	form.AddInputField("Quantity", "", 20, nil, nil)
+	form.AddInputField("Price per Share", "", 20, nil, nil)
+
+	form.AddButton("Save", func() {
+		dateStr := form.GetFormItem(0).(*tview.InputField).GetText()
+		_, typeStr := form.GetFormItem(1).(*tview.DropDown).GetCurrentOption()
+		symbol := form.GetFormItem(2).(*tview.InputField).GetText()
+		quantityStr := form.GetFormItem(3).(*tview.InputField).GetText()
+		priceStr := form.GetFormItem(4).(*tview.InputField).GetText()
+
+		date := utils.StringToDate(dateStr)
+
+		var transactionType types.TransactionType
+		if typeStr == "Buy" {
+			transactionType = types.TransactionTypeBuy
+		} else {
+			transactionType = types.TransactionTypeSell
+		}
+
+		quantity, _ := strconv.ParseInt(quantityStr, 10, 32)
+		price, _ := strconv.ParseFloat(priceStr, 64)
+		priceInCents := int32(price * 100)
+
+		transaction := types.Transaction{
+			Id:        "",
+			AccountId: account.Id,
+			Symbol:    symbol,
+			Date:      date,
+			Type:      transactionType,
+			Quantity:  int32(quantity),
+			Pps:       priceInCents,
+		}
+
+		err := loaders.AddTransaction(db, transaction)
+		if err != nil {
+			panic(err)
+		}
+
+		pages.RemovePage("addTransaction")
+	})
+	form.AddButton("Cancel", func() {
+		pages.RemovePage("addTransaction")
+	})
+
+	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			showAbandonConfirmation(app, pages)
+			return nil
+		}
+		return event
+	})
+
+	// Create modal with centered form
+	modal := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(nil, 0, 1, false).
+			AddItem(form, 50, 1, true).
+			AddItem(nil, 0, 1, false), 15, 1, true).
+		AddItem(nil, 0, 1, false)
+
+	pages.AddPage("addTransaction", modal, true, true)
+	app.SetFocus(form)
+}
+
+func showAbandonConfirmation(app *tview.Application, pages *tview.Pages) {
+	confirmForm := tview.NewForm()
+	confirmForm.SetBorder(true).SetTitle("Abandon Changes?").SetTitleAlign(tview.AlignLeft)
+	confirmForm.SetBackgroundColor(tcell.ColorBlack)
+
+	confirmForm.AddTextView("", "Are you sure you want to abandon your changes?", 40, 3, true, false)
+
+	confirmForm.AddButton("Yes, abandon", func() {
+		pages.RemovePage("abandonConfirm")
+		pages.RemovePage("addTransaction")
+	})
+	confirmForm.AddButton("No, continue editing", func() {
+		pages.RemovePage("abandonConfirm")
+	})
+
+	confirmForm.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			pages.RemovePage("abandonConfirm")
+			return nil
+		}
+		return event
+	})
+
+	confirmModal := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(nil, 0, 1, false).
+			AddItem(confirmForm, 50, 1, true).
+			AddItem(nil, 0, 1, false), 10, 1, true).
+		AddItem(nil, 0, 1, false)
+
+	pages.AddPage("abandonConfirm", confirmModal, true, true)
+	app.SetFocus(confirmForm)
+}
+
+func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pages, transaction types.Transaction) {
+	deleteForm := tview.NewForm()
+	deleteForm.SetBorder(true).SetTitle("Delete Transaction?").SetTitleAlign(tview.AlignLeft)
+	deleteForm.SetBackgroundColor(tcell.ColorBlack)
+
+	message := fmt.Sprintf("Are you sure you want to delete this transaction?\n\n%s %s - %d shares @ %s",
+		transaction.Date.Format("2006-01-02"),
+		transaction.Symbol,
+		transaction.Quantity,
+		utils.ToCurrencyString(int64(transaction.Pps), 2))
+
+	deleteForm.AddTextView("", message, 50, 5, true, false)
+
+	deleteForm.AddButton("Yes, delete", func() {
+		err := loaders.DeleteTransaction(db, transaction.Id)
+		if err != nil {
+			panic(fmt.Sprintf("Error deleting transaction: %s", err.Error()))
+		}
+		pages.RemovePage("deleteConfirm")
+		pages.SwitchToPage("Accounts")
+	})
+	deleteForm.AddButton("No, cancel", func() {
+		pages.RemovePage("deleteConfirm")
+	})
+
+	deleteForm.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyEscape {
+			pages.RemovePage("deleteConfirm")
+			return nil
+		}
+		return event
+	})
+
+	deleteModal := tview.NewFlex().SetDirection(tview.FlexRow).
+		AddItem(nil, 0, 1, false).
+		AddItem(tview.NewFlex().SetDirection(tview.FlexColumn).
+			AddItem(nil, 0, 1, false).
+			AddItem(deleteForm, 60, 1, true).
+			AddItem(nil, 0, 1, false), 12, 1, true).
+		AddItem(nil, 0, 1, false)
+
+	pages.AddPage("deleteConfirm", deleteModal, true, true)
+	app.SetFocus(deleteForm)
 }
