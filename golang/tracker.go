@@ -6,11 +6,10 @@ import (
 	"tracker/market"
 	"tracker/storage"
 	"tracker/tui"
+	"tracker/web"
 )
 
 func main() {
-	db, cleanup := storage.OpenLocalDatabase(false)
-	defer cleanup()
 
 	if len(os.Args) == 2 {
 		switch os.Args[1] {
@@ -20,8 +19,12 @@ func main() {
 			fmt.Println("  update: update market data")
 			fmt.Println("  (no args): start the portfolio tracker app")
 		case "update":
+			db, cleanup := storage.OpenLocalDatabase(false)
+			defer cleanup()
 			market.UpdateMarketData(db)
 			fmt.Println("Market data updated successfully")
+		case "server":
+			web.StartServer()
 		default:
 			fmt.Println("Unknown command")
 			fmt.Println("Usage: tracker [help|update]")
@@ -34,5 +37,7 @@ func main() {
 		return
 	}
 
+	db, cleanup := storage.OpenLocalDatabase(false)
+	defer cleanup()
 	tui.StartApp(db)
 }

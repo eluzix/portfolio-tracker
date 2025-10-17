@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"
+    >
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+            integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+            crossorigin="anonymous"></script>
+    <title>Portfolio Tracker</title>
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+
+        .err {
+            color: var(--pico-del-color);
+        }
+    </style>
+</head>
+<body>
+
+<header class="container">
+    <hgroup>
+        <h1>Portfolio Tracker</h1>
+        <p>My web version for showing my shit</p>
+    </hgroup>
+</header>
+    <main class="container">
+      <div id="accounts">
+        <table>
+          <thead>
+          <tr>
+          <th scope="col">ID</th>
+          <th scope="col">Account Name</th>
+          <th scope="col">Total Invested</th>
+            <th scope="col">Total Withdrawn</th>
+              <th scope="col">Total Dividends</th>
+               <th scope="col">Gain</th>
+               <th scope="col">Annualized Yield</th>
+               <th scope="col">Dietz Yield</th>
+               <th scope="col">Value</th>
+             </tr>
+           </thead>
+          <tbody>
+            {{$data := .accountsData}} 
+            {{range .accounts}}
+            {{$acData := (index $data .Id)}}
+            <tr>
+            <th scope="row">{{.Id}}</th>
+            <td>{{.Name}}</td>
+            <td>{{toCurrency $acData.TotalInvested 0}}</td>
+            <td>{{toCurrency $acData.TotalWithdrawn 0}}</td>
+            <td>{{toCurrency $acData.TotalDividends 0}}</td>
+            <td>{{toYield $acData.Gain}}</td>
+            <td>{{toYield $acData.AnnualizedYield}}</td>
+            <td>{{toYield $acData.ModifiedDietzYield}}</td>
+            <td>{{toCurrency $acData.Value 0}}</td>
+             </tr>
+            {{end}}
+          </tbody>
+        </table>
+      </div>
+      <div class="container htmx-indicator" id="loader">
+        <progress/>
+      </div>
+      <div class="container" id="results"></div>
+    </main>
+</body>
+</html>
