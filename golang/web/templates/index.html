@@ -31,7 +31,7 @@
 </header>
     <main class="container">
       <div id="accounts">
-        <table>
+        <table class="striped">
           <thead>
           <tr>
           <th scope="col">ID</th>
@@ -64,6 +64,12 @@
           </tbody>
         </table>
       </div>
+
+      <div style="text-align: center">
+        <button hx-post="/updateMarket" hx-trigger="click" hx-target="#action-response">Update Market Data</button>
+        <div id="action-response"></div>
+      </div>
+
       <div class="container htmx-indicator" id="loader">
         <progress/>
       </div>

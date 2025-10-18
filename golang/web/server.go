@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"sync"
 	"tracker/loaders"
+	"tracker/market"
 	"tracker/portfolio"
 	"tracker/storage"
 	"tracker/types"
@@ -52,6 +53,15 @@ func StartServer() {
 			"accounts":     accounts,
 			"accountsData": accountsData,
 		})
+	})
+
+	r.POST("/updateMarket", func(c *gin.Context) {
+		db, cleanup := storage.OpenLocalDatabase(false)
+		defer cleanup()
+
+		market.UpdateMarketData(db)
+
+		c.String(http.StatusOK, "Market data updated")
 	})
 
 	r.Run()
