@@ -127,14 +127,14 @@ func createTables(db *sql.DB) {
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS rates (
 		symbol TEXT PRIMARY KEY,
-		value INTEGER NOT NULL,
+		value FLOAT NOT NULL,
 		created_at DATETIME NULL
 		)`)
 	_, err = db.Exec(`
 	CREATE TABLE IF NOT EXISTS rates_history (
 		id TEXT PRIMARY KEY,
 		symbol TEXT NOT NULL,
-		value INTEGER NOT NULL,
+		value FLOAT NOT NULL,
 		created_at DATE NULL
 		)`)
 	if err != nil {

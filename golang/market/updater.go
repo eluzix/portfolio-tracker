@@ -145,7 +145,7 @@ func UpdateMarketData(db *sql.DB) {
 
 			_, err = stat.Exec(
 				symbol,
-				int32(value*100),
+				value,
 				now,
 			)
 

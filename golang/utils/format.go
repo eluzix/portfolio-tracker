@@ -13,8 +13,8 @@ func addCommas(s string) string {
 	return addCommas(s[:n-3]) + "," + s[n-3:]
 }
 
-func ToCurrencyString(val int64, precision int) string {
-	amount := float64(val) / 100.0
+func ToCurrencyString(val int64, precision int, currency string, rate float64) string {
+	amount := float64(val) * rate / 100.0
 	formatStr := fmt.Sprintf("%%.%df", precision)
 	formatted := fmt.Sprintf(formatStr, amount)
 
@@ -25,7 +25,7 @@ func ToCurrencyString(val int64, precision int) string {
 		} else {
 			intPart = addCommas(intPart)
 		}
-		return fmt.Sprintf("$%s", intPart)
+		return fmt.Sprintf("%s%s", currency, intPart)
 	}
 
 	parts := strings.Split(formatted, ".")
@@ -38,7 +38,11 @@ func ToCurrencyString(val int64, precision int) string {
 		intPart = addCommas(intPart)
 	}
 
-	return fmt.Sprintf("$%s.%s", intPart, decPart)
+	return fmt.Sprintf("%s%s.%s", currency, intPart, decPart)
+}
+
+func ToCurrencyStringUSD(val int64, precision int) string {
+	return ToCurrencyString(val, precision, "$", 1.0)
 }
 
 func ToYieldString(val float32) string {

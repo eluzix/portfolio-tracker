@@ -14,7 +14,14 @@ import (
 	"github.com/rivo/tview"
 )
 
-func TransactionsTable(db *sql.DB, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) *tview.Table {
+func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId string, app *tview.Application, pages *tview.Pages) *tview.Table {
+	portfolio := analysis.AccountsData[accountId]
+	currency := analysis.ExchaneSign
+	rate := analysis.ExchangeRate
+	multiplier := 1.0
+	if currency == "₪" {
+		multiplier = float64(rate)
+	}
 	transactionsTable := tview.NewTable().SetContent(nil)
 	transactionsTable.SetBorder(true).SetBorderColor(tcell.ColorGreenYellow)
 	transactionsTable.SetSelectable(true, false)
@@ -43,10 +50,10 @@ func TransactionsTable(db *sql.DB, portfolio types.AnalyzedPortfolio, app *tview
 		transactionsTable.SetCell(row, 1, tview.NewTableCell(string(tx.Type)).SetExpansion(1).SetAlign(tview.AlignLeft))
 		transactionsTable.SetCell(row, 2, tview.NewTableCell(tx.Symbol).SetExpansion(1).SetAlign(tview.AlignLeft))
 		transactionsTable.SetCell(row, 3, tview.NewTableCell(fmt.Sprintf("%d", tx.Quantity)).SetExpansion(1).SetAlign(tview.AlignRight))
-		transactionsTable.SetCell(row, 4, tview.NewTableCell(utils.ToCurrencyString(int64(tx.Pps), 2)).SetExpansion(2).SetAlign(tview.AlignRight))
+		transactionsTable.SetCell(row, 4, tview.NewTableCell(utils.ToCurrencyString(int64(tx.Pps), 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
 
 		total := int64(tx.Quantity) * int64(tx.Pps)
-		transactionsTable.SetCell(row, 5, tview.NewTableCell(utils.ToCurrencyString(total, 2)).SetExpansion(2).SetAlign(tview.AlignRight))
+		transactionsTable.SetCell(row, 5, tview.NewTableCell(utils.ToCurrencyString(total, 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
 	}
 
 	transactionsTable.SetSelectionChangedFunc(func(row, column int) {
@@ -57,12 +64,12 @@ func TransactionsTable(db *sql.DB, portfolio types.AnalyzedPortfolio, app *tview
 
 	transactionsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyCtrlD {
-			row, _ := transactionsTable.GetSelection()
-			if row >= 1 && row <= len(sortedTransactions) {
-				transaction := sortedTransactions[row-1]
-				showDeleteConfirmation(db, app, pages, transaction)
-			}
-			return nil
+		row, _ := transactionsTable.GetSelection()
+		if row >= 1 && row <= len(sortedTransactions) {
+		transaction := sortedTransactions[row-1]
+		showDeleteConfirmation(db, app, pages, transaction, currency, multiplier)
+		}
+		return nil
 		}
 		if event.Key() == tcell.KeyEscape {
 			pages.SwitchToPage("Accounts")
@@ -78,15 +85,22 @@ func TransactionsTable(db *sql.DB, portfolio types.AnalyzedPortfolio, app *tview
 	return transactionsTable
 }
 
-func SingleAccountPage(db *sql.DB, account types.Account, portfolio types.AnalyzedPortfolio, app *tview.Application, pages *tview.Pages) tview.Primitive {
+func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.Account, app *tview.Application, pages *tview.Pages) tview.Primitive {
+	portfolio := analysis.AccountsData[account.Id]
+	currency := analysis.ExchaneSign
+	rate := analysis.ExchangeRate
+	multiplier := 1.0
+	if currency == "₪" {
+		multiplier = float64(rate)
+	}
 	accountTitle := tview.NewTextView().
 		SetTextAlign(tview.AlignCenter).
 		SetText(account.Name).
 		SetTextStyle(tcell.StyleDefault.Foreground(tcell.ColorLimeGreen).Bold(true))
 
 	valuesSection := tview.NewFlex().SetDirection(tview.FlexColumn).
-		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Value: %s", utils.ToCurrencyString(portfolio.Value, 0))), 0, 1, false).
-		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Dividends: %s", utils.ToCurrencyString(portfolio.TotalDividends, 0))), 0, 1, false)
+		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Value: %s", utils.ToCurrencyString(portfolio.Value, 0, currency, multiplier))), 0, 1, false).
+		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Dividends: %s", utils.ToCurrencyString(portfolio.TotalDividends, 0, currency, multiplier))), 0, 1, false)
 
 	yieldsSection := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Dietz: %s", utils.ToYieldString(portfolio.ModifiedDietzYield))), 0, 1, false).
@@ -109,7 +123,7 @@ func SingleAccountPage(db *sql.DB, account types.Account, portfolio types.Analyz
 		AddItem(symbolsSection, 2, 1, false), 0, 2, false)
 	head.SetBackgroundColor(tcell.ColorLightYellow)
 
-	transactionsTable := TransactionsTable(db, portfolio, app, pages)
+	transactionsTable := TransactionsTable(db, analysis, account.Id, app, pages)
 
 	addButton := tview.NewButton("Add Transaction")
 	addButton.SetBackgroundColor(tcell.ColorDarkGreen)
@@ -151,7 +165,7 @@ func SingleAccountPage(db *sql.DB, account types.Account, portfolio types.Analyz
 				})
 				transaction := sortedTransactions[row-1]
 				if transaction.Type == types.TransactionTypeBuy || transaction.Type == types.TransactionTypeSell {
-					showDeleteConfirmation(db, app, pages, transaction)
+					showDeleteConfirmation(db, app, pages, transaction, currency, multiplier)
 				}
 			}
 			return nil
@@ -278,7 +292,7 @@ func showAbandonConfirmation(app *tview.Application, pages *tview.Pages) {
 	app.SetFocus(confirmForm)
 }
 
-func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pages, transaction types.Transaction) {
+func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pages, transaction types.Transaction, currency string, multiplier float64) {
 	deleteForm := tview.NewForm()
 	deleteForm.SetBorder(true).SetTitle("Delete Transaction?").SetTitleAlign(tview.AlignLeft)
 	deleteForm.SetBackgroundColor(tcell.ColorBlack)
@@ -287,7 +301,7 @@ func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pag
 		transaction.Date.Format("2006-01-02"),
 		transaction.Symbol,
 		transaction.Quantity,
-		utils.ToCurrencyString(int64(transaction.Pps), 2))
+		utils.ToCurrencyString(int64(transaction.Pps), 2, currency, multiplier))
 
 	deleteForm.AddTextView("", message, 50, 5, true, false)
 

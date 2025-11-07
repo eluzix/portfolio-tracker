@@ -21,7 +21,7 @@ var f embed.FS
 func StartServer() {
 	r := gin.Default()
 	funcMap := template.FuncMap{
-		"toCurrency": utils.ToCurrencyString,
+		"toCurrency": utils.ToCurrencyStringUSD,
 		"toYield":    utils.ToYieldString,
 	}
 	templ := template.Must(template.New("").Funcs(funcMap).ParseFS(f, "templates/*.html"))
