@@ -13,7 +13,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData) {
+func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData, theme Theme) {
 	accounts := analysis.Accounts
 	accountsData := analysis.AccountsData
 	currency := analysis.ExchaneSign
@@ -22,7 +22,7 @@ func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData) {
 	for i, ac := range *accounts {
 		ts := tcell.StyleDefault
 		if i == len(*accounts) {
-			ts = ts.Foreground(tcell.ColorRed)
+			ts = ts.Foreground(theme.Negative)
 		}
 
 		table.SetCell(i+1, 0, tview.NewTableCell(ac.Id).SetExpansion(1).SetAlign(tview.AlignLeft))
@@ -42,15 +42,17 @@ func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData) {
 func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Application, pages *tview.Pages) *tview.Flex {
 	var selectedAccount int
 	accounts := analysis.Accounts
+	theme := GetTheme()
 
 	table := tview.NewTable().SetContent(nil)
-	table.SetBorder(true).SetBorderColor(tcell.ColorGreenYellow)
+	table.SetBorder(true).SetBorderColor(theme.Border)
 	table.SetSelectable(true, false)
 	table.SetSeparator('|').SetBorderPadding(2, 2, 3, 3)
+	table.SetSelectedStyle(tcell.StyleDefault.Background(theme.SelectedBg).Foreground(theme.SelectedFg))
 
 	hs := tcell.StyleDefault.
-		Background(tcell.ColorOrangeRed).
-		Foreground(tcell.ColorGreenYellow).Bold(true)
+		Background(theme.HeaderBg).
+		Foreground(theme.HeaderFg).Bold(true)
 
 	table.SetCell(0, 0, tview.NewTableCell("ID").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignLeft))
 	table.SetCell(0, 1, tview.NewTableCell("Account Name").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignLeft))
@@ -62,7 +64,7 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 	table.SetCell(0, 7, tview.NewTableCell("Dietz Yield").SetStyle(hs).SetExpansion(1).SetAlign(tview.AlignRight))
 	table.SetCell(0, 8, tview.NewTableCell("Value").SetStyle(hs).SetExpansion(2).SetAlign(tview.AlignRight))
 
-	fillAccountsTable(table, analysis)
+	fillAccountsTable(table, analysis, theme)
 
 	table.SetSelectionChangedFunc(func(row, column int) {
 		if row == 0 {
@@ -89,11 +91,13 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 	head := tview.NewTextView().SetText("All Accounts").SetTextAlign(tview.AlignCenter)
 	focusItem := 0
 
-	nisButton := tview.NewButton("View in NIS").SetSelectedFunc(func() {
+	nisButton := tview.NewButton("View in NIS")
+	nisButton.SetStyle(tcell.StyleDefault.Background(theme.ButtonBg).Foreground(theme.ButtonFg))
+	nisButton.SetSelectedFunc(func() {
 		val := loaders.CurrencyExchangeRate(db, "ILS")
 		analysis.ExchaneSign = market.CurrencySymbolILS
 		analysis.ExchangeRate = val
-		fillAccountsTable(table, analysis)
+		fillAccountsTable(table, analysis, theme)
 		app.SetFocus(table)
 		focusItem = 0
 
@@ -101,10 +105,12 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 			app.Draw()
 		}()
 	})
-	usdButton := tview.NewButton("View in USD").SetSelectedFunc(func() {
+	usdButton := tview.NewButton("View in USD")
+	usdButton.SetStyle(tcell.StyleDefault.Background(theme.ButtonBg).Foreground(theme.ButtonFg))
+	usdButton.SetSelectedFunc(func() {
 		analysis.ExchaneSign = market.CurrencySymbolUSD
 		analysis.ExchangeRate = 1.0
-		fillAccountsTable(table, analysis)
+		fillAccountsTable(table, analysis, theme)
 		app.SetFocus(table)
 		focusItem = 0
 
@@ -147,6 +153,8 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 }
 
 func StartApp(db *sql.DB) {
+	theme := GetTheme()
+
 	accounts, _ := loaders.UserAccounts(db)
 	ac := types.Account{
 		Id:   "",
@@ -169,7 +177,13 @@ func StartApp(db *sql.DB) {
 
 	app := tview.NewApplication()
 	pages := tview.NewPages()
+	pages.SetBackgroundColor(theme.Background)
 	pages.AddPage("Accounts", AccountsPage(db, &analysis, app, pages), true, true)
+
+	app.SetBeforeDrawFunc(func(screen tcell.Screen) bool {
+		screen.Fill(' ', tcell.StyleDefault.Background(theme.Background).Foreground(theme.Foreground))
+		return false
+	})
 
 	if err := app.SetRoot(pages, true).SetFocus(pages).Run(); err != nil {
 		panic(err)

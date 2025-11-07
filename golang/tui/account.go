@@ -14,7 +14,7 @@ import (
 	"github.com/rivo/tview"
 )
 
-func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId string, app *tview.Application, pages *tview.Pages) *tview.Table {
+func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId string, app *tview.Application, pages *tview.Pages, theme Theme) *tview.Table {
 	portfolio := analysis.AccountsData[accountId]
 	currency := analysis.ExchaneSign
 	rate := analysis.ExchangeRate
@@ -23,13 +23,14 @@ func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId strin
 		multiplier = float64(rate)
 	}
 	transactionsTable := tview.NewTable().SetContent(nil)
-	transactionsTable.SetBorder(true).SetBorderColor(tcell.ColorGreenYellow)
+	transactionsTable.SetBorder(true).SetBorderColor(theme.Border)
 	transactionsTable.SetSelectable(true, false)
 	transactionsTable.SetSeparator('|').SetBorderPadding(2, 2, 3, 3)
+	transactionsTable.SetSelectedStyle(tcell.StyleDefault.Background(theme.SelectedBg).Foreground(theme.SelectedFg))
 
 	headerStyle := tcell.StyleDefault.
-		Background(tcell.ColorOrangeRed).
-		Foreground(tcell.ColorGreenYellow).Bold(true)
+		Background(theme.HeaderBg).
+		Foreground(theme.HeaderFg).Bold(true)
 
 	transactionsTable.SetCell(0, 0, tview.NewTableCell("Date").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
 	transactionsTable.SetCell(0, 1, tview.NewTableCell("Type").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
@@ -67,7 +68,7 @@ func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId strin
 		row, _ := transactionsTable.GetSelection()
 		if row >= 1 && row <= len(sortedTransactions) {
 		transaction := sortedTransactions[row-1]
-		showDeleteConfirmation(db, app, pages, transaction, currency, multiplier)
+		showDeleteConfirmation(db, app, pages, transaction, currency, multiplier, theme)
 		}
 		return nil
 		}
@@ -86,6 +87,8 @@ func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId strin
 }
 
 func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.Account, app *tview.Application, pages *tview.Pages) tview.Primitive {
+	theme := GetTheme()
+
 	portfolio := analysis.AccountsData[account.Id]
 	currency := analysis.ExchaneSign
 	rate := analysis.ExchangeRate
@@ -96,7 +99,7 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	accountTitle := tview.NewTextView().
 		SetTextAlign(tview.AlignCenter).
 		SetText(account.Name).
-		SetTextStyle(tcell.StyleDefault.Foreground(tcell.ColorLimeGreen).Bold(true))
+		SetTextStyle(tcell.StyleDefault.Foreground(theme.Positive).Bold(true))
 
 	valuesSection := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Value: %s", utils.ToCurrencyString(portfolio.Value, 0, currency, multiplier))), 0, 1, false).
@@ -121,14 +124,14 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 		AddItem(valuesSection, 1, 2, false).
 		AddItem(yieldsSection, 1, 2, false).
 		AddItem(symbolsSection, 2, 1, false), 0, 2, false)
-	head.SetBackgroundColor(tcell.ColorLightYellow)
+	head.SetBackgroundColor(theme.HeaderBg)
 
-	transactionsTable := TransactionsTable(db, analysis, account.Id, app, pages)
+	transactionsTable := TransactionsTable(db, analysis, account.Id, app, pages, theme)
 
 	addButton := tview.NewButton("Add Transaction")
-	addButton.SetBackgroundColor(tcell.ColorDarkGreen)
+	addButton.SetStyle(tcell.StyleDefault.Background(theme.ButtonBg).Foreground(theme.ButtonFg))
 	addButton.SetSelectedFunc(func() {
-		showAddTransactionModal(db, app, pages, account)
+		showAddTransactionModal(db, app, pages, account, theme)
 	})
 
 	buttonSection := tview.NewFlex().SetDirection(tview.FlexColumn).
@@ -165,7 +168,7 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 				})
 				transaction := sortedTransactions[row-1]
 				if transaction.Type == types.TransactionTypeBuy || transaction.Type == types.TransactionTypeSell {
-					showDeleteConfirmation(db, app, pages, transaction, currency, multiplier)
+					showDeleteConfirmation(db, app, pages, transaction, currency, multiplier, theme)
 				}
 			}
 			return nil
@@ -184,10 +187,12 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	return layout
 }
 
-func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pages, account types.Account) {
+func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pages, account types.Account, theme Theme) {
 	form := tview.NewForm()
 	form.SetBorder(true).SetTitle("Add Transaction").SetTitleAlign(tview.AlignLeft)
-	form.SetBackgroundColor(tcell.ColorBlack)
+	form.SetBackgroundColor(theme.ModalBg)
+	form.SetButtonBackgroundColor(theme.ButtonBg)
+	form.SetButtonTextColor(theme.ButtonFg)
 
 	form.AddInputField("Date (YYYY-MM-DD)", time.Now().Format("2006-01-02"), 20, nil, nil)
 	form.AddDropDown("Type", []string{"Buy", "Sell"}, 0, nil)
@@ -238,7 +243,7 @@ func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pa
 
 	form.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyEscape {
-			showAbandonConfirmation(app, pages)
+			showAbandonConfirmation(app, pages, theme)
 			return nil
 		}
 		return event
@@ -257,10 +262,12 @@ func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pa
 	app.SetFocus(form)
 }
 
-func showAbandonConfirmation(app *tview.Application, pages *tview.Pages) {
+func showAbandonConfirmation(app *tview.Application, pages *tview.Pages, theme Theme) {
 	confirmForm := tview.NewForm()
 	confirmForm.SetBorder(true).SetTitle("Abandon Changes?").SetTitleAlign(tview.AlignLeft)
-	confirmForm.SetBackgroundColor(tcell.ColorBlack)
+	confirmForm.SetBackgroundColor(theme.ModalBg)
+	confirmForm.SetButtonBackgroundColor(theme.ButtonBg)
+	confirmForm.SetButtonTextColor(theme.ButtonFg)
 
 	confirmForm.AddTextView("", "Are you sure you want to abandon your changes?", 40, 3, true, false)
 
@@ -292,10 +299,12 @@ func showAbandonConfirmation(app *tview.Application, pages *tview.Pages) {
 	app.SetFocus(confirmForm)
 }
 
-func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pages, transaction types.Transaction, currency string, multiplier float64) {
+func showDeleteConfirmation(db *sql.DB, app *tview.Application, pages *tview.Pages, transaction types.Transaction, currency string, multiplier float64, theme Theme) {
 	deleteForm := tview.NewForm()
 	deleteForm.SetBorder(true).SetTitle("Delete Transaction?").SetTitleAlign(tview.AlignLeft)
-	deleteForm.SetBackgroundColor(tcell.ColorBlack)
+	deleteForm.SetBackgroundColor(theme.ModalBg)
+	deleteForm.SetButtonBackgroundColor(theme.ButtonBg)
+	deleteForm.SetButtonTextColor(theme.ButtonFg)
 
 	message := fmt.Sprintf("Are you sure you want to delete this transaction?\n\n%s %s - %d shares @ %s",
 		transaction.Date.Format("2006-01-02"),
