@@ -11,8 +11,8 @@ import (
 
 func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
 	dbName := "tracker.db"
-	var dir string
 	var err error
+	var dir string
 
 	if tmp {
 		// todo move from tmp directory to wellknown location so it will not be deleted
@@ -26,12 +26,12 @@ func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
 			panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
 		}
 	} else {
-		dir = "data"
+		cfgDir, err := os.UserConfigDir()
+		if err != nil {
+			panic(fmt.Sprintf("Unable to location config dir: %s", err))
+		}
+		dir = fmt.Sprintf("%s/tracker/data/", cfgDir)
 		_ = os.Mkdir(dir, os.ModePerm)
-		// if err != nil {
-		// 	panic(fmt.Sprintf("Error creating local data directory %s : %s\n", dir, err))
-		// }
-
 	}
 
 	dbPath := filepath.Join(dir, dbName)

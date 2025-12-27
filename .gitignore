@@ -24,3 +24,4 @@ target/
 *.jsonl
 tracker.db*
 tracker
+migrate

@@ -27,7 +27,7 @@ func main() {
 			web.StartServer()
 		default:
 			fmt.Println("Unknown command")
-			fmt.Println("Usage: tracker [help|update]")
+			fmt.Println("Usage: tracker [help|update|server]")
 		}
 
 		return

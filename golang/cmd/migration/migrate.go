@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 	"tracker/storage"
 	"tracker/types"
 )
@@ -22,8 +23,9 @@ const (
 
 // Set this to control which migration runs
 // var MIGRATION_TYPE = COUNT_TRANSACTIONS
-// var MIGRATION_TYPE = MIGRATE_TRANSACTIONS
-var MIGRATION_TYPE = CREATE_TABLES
+var MIGRATION_TYPE = MIGRATE_TRANSACTIONS
+
+// var MIGRATION_TYPE = CREATE_TABLES
 
 func main() {
 	// db, cleanup := storage.OpenDatabase()
@@ -211,13 +213,44 @@ func migrateTransactions(db *sql.DB) {
 			continue
 		}
 
-		var transaction types.Transaction
-		if err := json.Unmarshal([]byte(line), &transaction); err != nil {
+		// Define a temporary struct to handle date parsing
+		type jsonTransaction struct {
+			Id        string                `json:"id"`
+			AccountId string                `json:"account_id"`
+			Symbol    string                `json:"symbol"`
+			Date      string                `json:"date"`
+			Type      types.TransactionType `json:"transaction_type"`
+			Quantity  int32                 `json:"quantity"`
+			Pps       int32                 `json:"pps"`
+		}
+
+		var jt jsonTransaction
+		if err := json.Unmarshal([]byte(line), &jt); err != nil {
 			fmt.Fprintf(os.Stderr, "failed to parse transaction JSON: %v\nLine: %s\n", err, line)
 			continue
 		}
 
-		_, err := stmt.Exec(
+		parsedDate, err := time.Parse("2006-01-02", jt.Date)
+		if err != nil {
+			// Try RFC3339 if simple date fails
+			parsedDate, err = time.Parse(time.RFC3339, jt.Date)
+			if err != nil {
+				fmt.Fprintf(os.Stderr, "failed to parse date '%s' for transaction %s: %v\n", jt.Date, jt.Id, err)
+				continue
+			}
+		}
+
+		transaction := types.Transaction{
+			Id:        jt.Id,
+			AccountId: jt.AccountId,
+			Symbol:    jt.Symbol,
+			Date:      parsedDate,
+			Type:      jt.Type,
+			Quantity:  jt.Quantity,
+			Pps:       jt.Pps,
+		}
+
+		_, err = stmt.Exec(
 			transaction.Id,
 			transaction.AccountId,
 			transaction.Symbol,
