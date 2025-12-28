@@ -67,9 +67,11 @@ func StartServer() {
 	templ := template.Must(template.New("").Funcs(funcMap).ParseFS(f, "templates/*.html"))
 	r.SetHTMLTemplate(templ)
 
+	db, cleanup := storage.OpenDatabase()
+	defer cleanup()
+
 	r.GET("/", func(c *gin.Context) {
-		db, cleanup := storage.OpenLocalDatabase(false)
-		defer cleanup()
+		// db, cleanup := storage.OpenLocalDatabase(false)
 
 		currency := c.DefaultQuery("currency", "USD")
 		currencySymbol := market.CurrencySymbolUSD
@@ -114,8 +116,9 @@ func StartServer() {
 	})
 
 	r.POST("/updateMarket", func(c *gin.Context) {
-		db, cleanup := storage.OpenLocalDatabase(false)
-		defer cleanup()
+		// db, cleanup := storage.OpenLocalDatabase(false)
+		// db, cleanup := storage.OpenDatabase()
+		// defer cleanup()
 
 		market.UpdateMarketData(db)
 

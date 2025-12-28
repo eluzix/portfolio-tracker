@@ -19,7 +19,8 @@ func main() {
 			fmt.Println("  update: update market data")
 			fmt.Println("  (no args): start the portfolio tracker app")
 		case "update":
-			db, cleanup := storage.OpenLocalDatabase(false)
+			// db, cleanup := storage.OpenLocalDatabase(false)
+			db, cleanup := storage.OpenDatabase()
 			defer cleanup()
 			market.UpdateMarketData(db)
 			fmt.Println("Market data updated successfully")
@@ -37,7 +38,8 @@ func main() {
 		return
 	}
 
-	db, cleanup := storage.OpenLocalDatabase(false)
+	// db, cleanup := storage.OpenLocalDatabase(false)
+	db, cleanup := storage.OpenDatabase()
 	defer cleanup()
 	tui.StartApp(db)
 }
