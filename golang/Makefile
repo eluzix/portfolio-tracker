@@ -1,4 +1,4 @@
-.PHONY: default build test clean run
+.PHONY: default build test clean run server
 
 default: run
 
@@ -13,3 +13,8 @@ test:
 
 clean:
 	rm -f tracker
+
+server:
+	go build -o tracker tracker.go
+	./tracker server
+

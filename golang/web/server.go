@@ -3,7 +3,9 @@ package web
 import (
 	"embed"
 	"html/template"
+	"log"
 	"net/http"
+	"os"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -14,7 +16,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-//go:embed templates/*
+//go:embed templates/* static/*
 var f embed.FS
 
 func toCurrencyWithRate(val int64, precision int, symbol string, rate float64) string {
@@ -58,7 +60,18 @@ func getFilteredAccountIds(accounts *[]types.Account, tagFilter string) []string
 }
 
 func StartServer() {
+	user := os.Getenv("TRACKER_USER")
+	pass := os.Getenv("TRACKER_PASSWORD")
+	if user == "" || pass == "" {
+		log.Fatal("TRACKER_USER and TRACKER_PASSWORD environment variables must be set")
+	}
+
 	r := gin.Default()
+
+	r.Use(gin.BasicAuth(gin.Accounts{
+		user: pass,
+	}))
+
 	funcMap := template.FuncMap{
 		"toCurrency":         utils.ToCurrencyStringUSD,
 		"toCurrencyWithRate": toCurrencyWithRate,
@@ -66,6 +79,10 @@ func StartServer() {
 	}
 	templ := template.Must(template.New("").Funcs(funcMap).ParseFS(f, "templates/*.html"))
 	r.SetHTMLTemplate(templ)
+
+	r.GET("/static/*filepath", func(c *gin.Context) {
+		c.FileFromFS("static"+c.Param("filepath"), http.FS(f))
+	})
 
 	db, cleanup := storage.OpenDatabase()
 	defer cleanup()
