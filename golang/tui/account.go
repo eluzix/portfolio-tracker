@@ -15,76 +15,47 @@ import (
 	"github.com/rivo/tview"
 )
 
-func TransactionsTable(db *sql.DB, analysis *types.AnalysisData, accountId string, app *tview.Application, pages *tview.Pages, theme Theme) *tview.Table {
-	portfolio := analysis.AccountsData[accountId]
-	currency := analysis.ExchaneSign
-	rate := analysis.ExchangeRate
-	multiplier := 1.0
-	if currency == "₪" {
-		multiplier = float64(rate)
-	}
-	transactionsTable := tview.NewTable().SetContent(nil)
-	transactionsTable.SetBorder(true).SetBorderColor(theme.Border)
-	transactionsTable.SetSelectable(true, false)
-	transactionsTable.SetSeparator('|').SetBorderPadding(2, 2, 3, 3)
-	transactionsTable.SetSelectedStyle(tcell.StyleDefault.Background(theme.SelectedBg).Foreground(theme.SelectedFg))
+func fillTransactionsTable(table *tview.Table, transactions []types.Transaction, currency string, multiplier float64, theme Theme, showDividends bool) []types.Transaction {
+	table.Clear()
 
 	headerStyle := tcell.StyleDefault.
 		Background(theme.HeaderBg).
 		Foreground(theme.HeaderFg).Bold(true)
 
-	transactionsTable.SetCell(0, 0, tview.NewTableCell("Date").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
-	transactionsTable.SetCell(0, 1, tview.NewTableCell("Type").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
-	transactionsTable.SetCell(0, 2, tview.NewTableCell("Symbol").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
-	transactionsTable.SetCell(0, 3, tview.NewTableCell("Quantity").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignRight))
-	transactionsTable.SetCell(0, 4, tview.NewTableCell("Price").SetStyle(headerStyle).SetExpansion(2).SetAlign(tview.AlignRight))
-	transactionsTable.SetCell(0, 5, tview.NewTableCell("Total").SetStyle(headerStyle).SetExpansion(2).SetAlign(tview.AlignRight))
+	table.SetCell(0, 0, tview.NewTableCell("Date").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
+	table.SetCell(0, 1, tview.NewTableCell("Type").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
+	table.SetCell(0, 2, tview.NewTableCell("Symbol").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignLeft))
+	table.SetCell(0, 3, tview.NewTableCell("Quantity").SetStyle(headerStyle).SetExpansion(1).SetAlign(tview.AlignRight))
+	table.SetCell(0, 4, tview.NewTableCell("Price").SetStyle(headerStyle).SetExpansion(2).SetAlign(tview.AlignRight))
+	table.SetCell(0, 5, tview.NewTableCell("Total").SetStyle(headerStyle).SetExpansion(2).SetAlign(tview.AlignRight))
 
-	sortedTransactions := make([]types.Transaction, len(portfolio.Transactions))
-	copy(sortedTransactions, portfolio.Transactions)
+	sortedTransactions := make([]types.Transaction, len(transactions))
+	copy(sortedTransactions, transactions)
 	sort.Slice(sortedTransactions, func(i, j int) bool {
 		return sortedTransactions[i].Date.After(sortedTransactions[j].Date)
 	})
 
-	for i, tx := range sortedTransactions {
-		row := i + 1
-		transactionsTable.SetCell(row, 0, tview.NewTableCell(tx.Date.Format("2006-01-02")).SetExpansion(1).SetAlign(tview.AlignLeft))
-		transactionsTable.SetCell(row, 1, tview.NewTableCell(string(tx.Type)).SetExpansion(1).SetAlign(tview.AlignLeft))
-		transactionsTable.SetCell(row, 2, tview.NewTableCell(tx.Symbol).SetExpansion(1).SetAlign(tview.AlignLeft))
-		transactionsTable.SetCell(row, 3, tview.NewTableCell(fmt.Sprintf("%d", tx.Quantity)).SetExpansion(1).SetAlign(tview.AlignRight))
-		transactionsTable.SetCell(row, 4, tview.NewTableCell(utils.ToCurrencyString(int64(tx.Pps), 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
+	var displayedTransactions []types.Transaction
+	row := 1
+	for _, tx := range sortedTransactions {
+		if !showDividends && (tx.Type == types.TransactionTypeDividend || tx.Type == types.TransactionTypeSplit) {
+			continue
+		}
+		displayedTransactions = append(displayedTransactions, tx)
+
+		table.SetCell(row, 0, tview.NewTableCell(tx.Date.Format("2006-01-02")).SetExpansion(1).SetAlign(tview.AlignLeft))
+		table.SetCell(row, 1, tview.NewTableCell(string(tx.Type)).SetExpansion(1).SetAlign(tview.AlignLeft))
+		table.SetCell(row, 2, tview.NewTableCell(tx.Symbol).SetExpansion(1).SetAlign(tview.AlignLeft))
+		table.SetCell(row, 3, tview.NewTableCell(fmt.Sprintf("%d", tx.Quantity)).SetExpansion(1).SetAlign(tview.AlignRight))
+		table.SetCell(row, 4, tview.NewTableCell(utils.ToCurrencyString(int64(tx.Pps), 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
 
 		total := int64(tx.Quantity) * int64(tx.Pps)
-		transactionsTable.SetCell(row, 5, tview.NewTableCell(utils.ToCurrencyString(total, 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
+		table.SetCell(row, 5, tview.NewTableCell(utils.ToCurrencyString(total, 2, currency, multiplier)).SetExpansion(2).SetAlign(tview.AlignRight))
+		row++
 	}
 
-	transactionsTable.SetSelectionChangedFunc(func(row, column int) {
-		if row == 0 && len(sortedTransactions) > 0 {
-			transactionsTable.Select(1, column)
-		}
-	})
-
-	transactionsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlD {
-		row, _ := transactionsTable.GetSelection()
-		if row >= 1 && row <= len(sortedTransactions) {
-		transaction := sortedTransactions[row-1]
-		showDeleteConfirmation(db, app, pages, transaction, currency, multiplier, theme)
-		}
-		return nil
-		}
-		if event.Key() == tcell.KeyEscape {
-			pages.SwitchToPage("Accounts")
-			return nil
-		}
-		return event
-	})
-
-	app.SetFocus(transactionsTable)
-
-	transactionsTable.Select(1, 0).SetFixed(1, 2)
-
-	return transactionsTable
+	table.Select(1, 0).SetFixed(1, 2)
+	return displayedTransactions
 }
 
 func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.Account, app *tview.Application, pages *tview.Pages) tview.Primitive {
@@ -97,6 +68,10 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	if currency == "₪" {
 		multiplier = float64(rate)
 	}
+
+	showDividends := true
+	var displayedTransactions []types.Transaction
+
 	accountTitle := tview.NewTextView().
 		SetTextAlign(tview.AlignCenter).
 		SetText(account.Name).
@@ -136,7 +111,13 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 		AddItem(tagsSection, 1, 1, false), 0, 2, false)
 	head.SetBackgroundColor(theme.HeaderBg)
 
-	transactionsTable := TransactionsTable(db, analysis, account.Id, app, pages, theme)
+	transactionsTable := tview.NewTable().SetContent(nil)
+	transactionsTable.SetBorder(true).SetBorderColor(theme.Border)
+	transactionsTable.SetSelectable(true, false)
+	transactionsTable.SetSeparator('|').SetBorderPadding(2, 2, 3, 3)
+	transactionsTable.SetSelectedStyle(tcell.StyleDefault.Background(theme.SelectedBg).Foreground(theme.SelectedFg))
+
+	displayedTransactions = fillTransactionsTable(transactionsTable, portfolio.Transactions, currency, multiplier, theme, showDividends)
 
 	addButton := tview.NewButton("Add Transaction")
 	addButton.SetStyle(tcell.StyleDefault.Background(theme.ButtonBg).Foreground(theme.ButtonFg))
@@ -144,9 +125,24 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 		showAddTransactionModal(db, app, pages, account, theme)
 	})
 
+	toggleButton := tview.NewButton("Hide Dividends")
+	toggleButton.SetStyle(tcell.StyleDefault.Background(theme.ButtonBg).Foreground(theme.ButtonFg))
+	toggleButton.SetSelectedFunc(func() {
+		showDividends = !showDividends
+		if showDividends {
+			toggleButton.SetLabel("Hide Dividends")
+		} else {
+			toggleButton.SetLabel("Show Dividends")
+		}
+		displayedTransactions = fillTransactionsTable(transactionsTable, portfolio.Transactions, currency, multiplier, theme, showDividends)
+		app.Sync()
+	})
+
 	buttonSection := tview.NewFlex().SetDirection(tview.FlexColumn).
 		AddItem(nil, 0, 1, false).
 		AddItem(addButton, 20, 1, false).
+		AddItem(tview.NewTextView().SetText(" "), 2, 0, false).
+		AddItem(toggleButton, 20, 1, false).
 		AddItem(nil, 0, 1, false)
 
 	layout := tview.NewFlex().SetDirection(tview.FlexRow).SetFullScreen(true)
@@ -154,10 +150,35 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	layout.AddItem(buttonSection, 1, 1, false)
 	layout.AddItem(transactionsTable, 0, 4, true)
 
-	// Set up tab navigation between button and table
-	addButton.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	transactionsTable.SetSelectionChangedFunc(func(row, column int) {
+		if row == 0 && len(displayedTransactions) > 0 {
+			transactionsTable.Select(1, column)
+		}
+	})
+
+	focusItem := 0
+	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
-			app.SetFocus(transactionsTable)
+			if focusItem == 0 {
+				app.SetFocus(addButton)
+				focusItem = 1
+			} else if focusItem == 1 {
+				app.SetFocus(toggleButton)
+				focusItem = 2
+			} else {
+				app.SetFocus(transactionsTable)
+				focusItem = 0
+			}
+			return nil
+		}
+		if event.Key() == tcell.KeyCtrlD {
+			row, _ := transactionsTable.GetSelection()
+			if row >= 1 && row <= len(displayedTransactions) {
+				transaction := displayedTransactions[row-1]
+				if transaction.Type == types.TransactionTypeBuy || transaction.Type == types.TransactionTypeSell {
+					showDeleteConfirmation(db, app, pages, transaction, currency, multiplier, theme)
+				}
+			}
 			return nil
 		}
 		if event.Key() == tcell.KeyEscape {
@@ -167,32 +188,7 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 		return event
 	})
 
-	transactionsTable.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
-		if event.Key() == tcell.KeyCtrlD {
-			row, _ := transactionsTable.GetSelection()
-			if row >= 1 && row <= len(portfolio.Transactions) {
-				sortedTransactions := make([]types.Transaction, len(portfolio.Transactions))
-				copy(sortedTransactions, portfolio.Transactions)
-				sort.Slice(sortedTransactions, func(i, j int) bool {
-					return sortedTransactions[i].Date.After(sortedTransactions[j].Date)
-				})
-				transaction := sortedTransactions[row-1]
-				if transaction.Type == types.TransactionTypeBuy || transaction.Type == types.TransactionTypeSell {
-					showDeleteConfirmation(db, app, pages, transaction, currency, multiplier, theme)
-				}
-			}
-			return nil
-		}
-		if event.Key() == tcell.KeyTab {
-			app.SetFocus(addButton)
-			return nil
-		}
-		if event.Key() == tcell.KeyEscape {
-			pages.SwitchToPage("Accounts")
-			return nil
-		}
-		return event
-	})
+	app.SetFocus(transactionsTable)
 
 	return layout
 }
