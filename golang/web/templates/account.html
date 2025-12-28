@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link
+            rel="stylesheet"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"
+    >
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
+            integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
+            crossorigin="anonymous"></script>
+    <title>{{.account.Name}} - Portfolio Tracker</title>
+    <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <style>
+        :root {
+            --pico-font-size: 16px;
+        }
+        .account-header {
+            background: var(--pico-card-background-color);
+            padding: 1rem;
+            border-radius: var(--pico-border-radius);
+            margin-bottom: 1rem;
+        }
+        .account-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin: 1rem 0;
+        }
+        .stat-item {
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: var(--pico-muted-color);
+        }
+        .stat-value {
+            font-size: 1.1rem;
+            font-weight: bold;
+        }
+        .holdings {
+            margin: 1rem 0;
+        }
+        .holding-badge {
+            display: inline-block;
+            background: var(--pico-primary-background);
+            color: var(--pico-primary-inverse);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--pico-border-radius);
+            margin: 0.25rem;
+            font-size: 0.85rem;
+        }
+        .tag-badge {
+            display: inline-block;
+            background: var(--pico-secondary-background);
+            color: var(--pico-secondary-inverse);
+            padding: 0.25rem 0.5rem;
+            border-radius: var(--pico-border-radius);
+            margin: 0.25rem;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<header class="container">
+    <nav>
+        <ul>
+            <li><a href="/?currency={{.currency}}">&larr; Back to Portfolio</a></li>
+        </ul>
+        <ul>
+            <li><strong>{{.account.Name}}</strong></li>
+        </ul>
+    </nav>
+</header>
+
+<main class="container">
+    <div id="account-view">
+        <article class="account-header">
+            <hgroup>
+                <h2>{{.account.Name}}</h2>
+                <p>{{.account.Institution}}</p>
+            </hgroup>
+
+            <div class="account-stats">
+                <div class="stat-item">
+                    <div class="stat-label">Value</div>
+                    <div class="stat-value">{{toCurrencyWithRate .portfolio.Value 0 .currencySymbol .exchangeRate}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Invested</div>
+                    <div class="stat-value">{{toCurrencyWithRate .portfolio.TotalInvested 0 .currencySymbol .exchangeRate}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Total Withdrawn</div>
+                    <div class="stat-value">{{toCurrencyWithRate .portfolio.TotalWithdrawn 0 .currencySymbol .exchangeRate}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Dividends</div>
+                    <div class="stat-value">{{toCurrencyWithRate .portfolio.TotalDividends 0 .currencySymbol .exchangeRate}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Gain</div>
+                    <div class="stat-value">{{toYield .portfolio.Gain}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Annualized Yield</div>
+                    <div class="stat-value">{{toYield .portfolio.AnnualizedYield}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Dietz Yield</div>
+                    <div class="stat-value">{{toYield .portfolio.ModifiedDietzYield}}</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-label">Inception</div>
+                    <div class="stat-value">{{formatDate .portfolio.FirstTransaction.Date}}</div>
+                </div>
+            </div>
+
+            <div class="holdings">
+                <strong>Holdings:</strong>
+                {{range $symbol, $count := .portfolio.SymbolsCount}}
+                {{if gt $count 0}}
+                <span class="holding-badge">{{$symbol}} ({{$count}})</span>
+                {{end}}
+                {{end}}
+            </div>
+
+            {{if .account.Tags}}
+            <div>
+                <strong>Tags:</strong>
+                {{range .account.Tags}}
+                <span class="tag-badge">{{.}}</span>
+                {{end}}
+            </div>
+            {{end}}
+        </article>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <fieldset role="group" style="width: fit-content; gap: 0.5rem; margin-bottom: 0;">
+                <label>
+                    <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
+                           hx-get="/account/{{.account.Id}}?currency=USD&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
+                    $ USD
+                </label>
+                <label>
+                    <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
+                           hx-get="/account/{{.account.Id}}?currency=ILS&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
+                    ₪ ILS
+                </label>
+            </fieldset>
+
+            <fieldset role="group" style="width: fit-content; margin-bottom: 0;">
+                <label>
+                    <input type="checkbox" name="showDividends" {{if .showDividends}}checked{{end}}
+                           hx-get="/account/{{.account.Id}}?currency={{.currency}}&showDividends={{if .showDividends}}false{{else}}true{{end}}" 
+                           hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
+                    Show Dividends/Splits
+                </label>
+            </fieldset>
+        </div>
+
+        <table class="striped">
+            <thead>
+            <tr>
+                <th scope="col">Date</th>
+                <th scope="col">Type</th>
+                <th scope="col">Symbol</th>
+                <th scope="col" style="text-align: right;">Quantity</th>
+                <th scope="col" style="text-align: right;">Price</th>
+                <th scope="col" style="text-align: right;">Total</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{$symbol := .currencySymbol}}
+            {{$rate := .exchangeRate}}
+            {{range .transactions}}
+            <tr>
+                <td>{{formatDate .Date}}</td>
+                <td>{{.Type}}</td>
+                <td>{{.Symbol}}</td>
+                <td style="text-align: right;">{{.Quantity}}</td>
+                <td style="text-align: right;">{{toCurrencyWithRate (int64 .Pps) 2 $symbol $rate}}</td>
+                <td style="text-align: right;">{{toCurrencyWithRate (mul64 .Quantity .Pps) 2 $symbol $rate}}</td>
+            </tr>
+            {{end}}
+            </tbody>
+        </table>
+    </div>
+</main>
+</body>
+</html>

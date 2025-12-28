@@ -82,7 +82,7 @@
             {{$acData := (index $data .Id)}}
             <tr>
             <th scope="row">{{.Id}}</th>
-            <td>{{.Name}}</td>
+            <td><a href="/account/{{.Id}}?currency={{$.currency}}">{{.Name}}</a></td>
             <td>{{toCurrencyWithRate $acData.TotalInvested 0 $symbol $rate}}</td>
             <td>{{toCurrencyWithRate $acData.TotalWithdrawn 0 $symbol $rate}}</td>
             <td>{{toCurrencyWithRate $acData.TotalDividends 0 $symbol $rate}}</td>
@@ -110,12 +110,24 @@
       </div>
 
       <div style="text-align: center">
-        <button hx-post="/updateMarket" hx-trigger="click" hx-target="#action-response" hx-indicator="#market-loader">Update Market Data</button>
+        <button onclick="document.getElementById('confirm-modal').showModal()">Update Market Data</button>
         <div id="market-loader" class="htmx-indicator" style="margin-top: 1rem;">
           <progress></progress>
         </div>
         <div id="action-response"></div>
       </div>
+
+      <dialog id="confirm-modal">
+        <article>
+          <h3>Confirm Update</h3>
+          <p>This will consume API tokens to fetch latest market data. Continue?</p>
+          <footer>
+            <button class="secondary" onclick="document.getElementById('confirm-modal').close()">Cancel</button>
+            <button hx-post="/updateMarket" hx-target="#action-response" hx-indicator="#market-loader"
+                    onclick="document.getElementById('confirm-modal').close()">Yes, Update</button>
+          </footer>
+        </article>
+      </dialog>
       <div class="container" id="results"></div>
     </main>
 </body>

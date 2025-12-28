@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sort"
+	"time"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -76,6 +78,15 @@ func StartServer() {
 		"toCurrency":         utils.ToCurrencyStringUSD,
 		"toCurrencyWithRate": toCurrencyWithRate,
 		"toYield":            utils.ToYieldString,
+		"formatDate": func(t time.Time) string {
+			return t.Format("2006-01-02")
+		},
+		"int64": func(i int32) int64 {
+			return int64(i)
+		},
+		"mul64": func(a, b int32) int64 {
+			return int64(a) * int64(b)
+		},
 	}
 	templ := template.Must(template.New("").Funcs(funcMap).ParseFS(f, "templates/*.html"))
 	r.SetHTMLTemplate(templ)
@@ -129,6 +140,62 @@ func StartServer() {
 			"exchangeRate":     exchangeRate,
 			"tags":             tags,
 			"tagFilter":        tagFilter,
+		})
+	})
+
+	r.GET("/account/:id", func(c *gin.Context) {
+		accountId := c.Param("id")
+
+		currency := c.DefaultQuery("currency", "USD")
+		currencySymbol := market.CurrencySymbolUSD
+		exchangeRate := 1.0
+		if currency == "ILS" {
+			currencySymbol = market.CurrencySymbolILS
+			exchangeRate = loaders.CurrencyExchangeRate(db, "ILS")
+		}
+
+		showDividends := c.DefaultQuery("showDividends", "true") == "true"
+
+		accounts, _ := loaders.UserAccounts(db)
+		var account types.Account
+		for _, ac := range *accounts {
+			if ac.Id == accountId {
+				account = ac
+				break
+			}
+		}
+
+		if account.Id == "" {
+			c.String(http.StatusNotFound, "Account not found")
+			return
+		}
+
+		portfolioData, _ := portfolio.LoadAndAnalyze(db, account)
+
+		transactions := make([]types.Transaction, len(portfolioData.Transactions))
+		copy(transactions, portfolioData.Transactions)
+		sort.Slice(transactions, func(i, j int) bool {
+			return transactions[i].Date.After(transactions[j].Date)
+		})
+
+		if !showDividends {
+			var filtered []types.Transaction
+			for _, tx := range transactions {
+				if tx.Type != types.TransactionTypeDividend && tx.Type != types.TransactionTypeSplit {
+					filtered = append(filtered, tx)
+				}
+			}
+			transactions = filtered
+		}
+
+		c.HTML(http.StatusOK, "account.html", gin.H{
+			"account":        account,
+			"portfolio":      portfolioData,
+			"transactions":   transactions,
+			"currency":       currency,
+			"currencySymbol": currencySymbol,
+			"exchangeRate":   exchangeRate,
+			"showDividends":  showDividends,
 		})
 	})
 
