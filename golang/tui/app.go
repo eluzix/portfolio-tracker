@@ -37,9 +37,6 @@ func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData, theme T
 
 	row := 1
 	for _, ac := range *accounts {
-		if ac.Id == "" {
-			continue
-		}
 		if tagFilter != "All" && !hasTag(ac.Tags, tagFilter) {
 			continue
 		}
@@ -74,9 +71,6 @@ func fillAccountsTable(table *tview.Table, analysis *types.AnalysisData, theme T
 func getFilteredAccountIds(accounts *[]types.Account, tagFilter string) []string {
 	var ids []string
 	for _, ac := range *accounts {
-		if ac.Id == "" {
-			continue
-		}
 		if tagFilter == "All" || hasTag(ac.Tags, tagFilter) {
 			ids = append(ids, ac.Id)
 		}
@@ -85,9 +79,6 @@ func getFilteredAccountIds(accounts *[]types.Account, tagFilter string) []string
 }
 
 func computeAllPortfolioData(db *sql.DB, analysis *types.AnalysisData, tagFilter string) types.AnalyzedPortfolio {
-	if tagFilter == "All" {
-		return analysis.AccountsData[""]
-	}
 	filteredIds := getFilteredAccountIds(analysis.Accounts, tagFilter)
 	data, _ := portfolio.LoadAndAnalyzeAccounts(db, filteredIds)
 	return data
@@ -238,9 +229,6 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 func getFilteredAccounts(accounts *[]types.Account, tagFilter string) []types.Account {
 	var filtered []types.Account
 	for _, ac := range *accounts {
-		if ac.Id == "" {
-			continue
-		}
 		if tagFilter == "All" || hasTag(ac.Tags, tagFilter) {
 			filtered = append(filtered, ac)
 		}
@@ -252,11 +240,6 @@ func StartApp(db *sql.DB) {
 	theme := GetTheme()
 
 	accounts, _ := loaders.UserAccounts(db)
-	ac := types.Account{
-		Id:   "",
-		Name: "All Portfolio",
-	}
-	(*accounts) = append((*accounts), ac)
 
 	accountsData := make(map[string]types.AnalyzedPortfolio, len(*accounts))
 	var wg sync.WaitGroup

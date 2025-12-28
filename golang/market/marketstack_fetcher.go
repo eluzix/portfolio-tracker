@@ -148,13 +148,19 @@ func (m *MarketStackDataFetcher) FetchDividends(symbols []string) (map[string][]
 		// Convert dividend amount to int32 (assuming in cents)
 		ppsInt := int32(div.Dividend * 100)
 
-		tid := fmt.Sprintf("%s#%s#%s#%d", div.Symbol, div.Date, types.TransactionTypeDividend, ppsInt)
+		// Normalize date to YYYY-MM-DD format for consistent ID generation
+		dateStr := div.Date
+		if len(dateStr) > 10 {
+			dateStr = dateStr[:10]
+		}
+
+		tid := fmt.Sprintf("%s#%s#%s#%d", div.Symbol, dateStr, types.TransactionTypeDividend, ppsInt)
 		hash := sha1.Sum([]byte(tid))
 		transaction := types.Transaction{
 			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    div.Symbol,
-			Date:      utils.StringToDate(div.Date),
+			Date:      utils.StringToDate(dateStr),
 			Type:      types.TransactionTypeDividend,
 			Quantity:  0,
 			Pps:       ppsInt,
@@ -200,13 +206,19 @@ func (m *MarketStackDataFetcher) FetchSplits(symbols []string) (map[string][]typ
 		// Convert split factor to int32 (multiply by 100 for precision)
 		ppsInt := int32(split.SplitFactor * 100)
 
-		tid := fmt.Sprintf("%s#%s#%s#%d", split.Symbol, split.Date, types.TransactionTypeSplit, ppsInt)
+		// Normalize date to YYYY-MM-DD format for consistent ID generation
+		dateStr := split.Date
+		if len(dateStr) > 10 {
+			dateStr = dateStr[:10]
+		}
+
+		tid := fmt.Sprintf("%s#%s#%s#%d", split.Symbol, dateStr, types.TransactionTypeSplit, ppsInt)
 		hash := sha1.Sum([]byte(tid))
 		transaction := types.Transaction{
 			Id:        hex.EncodeToString(hash[:]),
 			AccountId: "",
 			Symbol:    split.Symbol,
-			Date:      utils.StringToDate(split.Date),
+			Date:      utils.StringToDate(dateStr),
 			Type:      types.TransactionTypeSplit,
 			Quantity:  0,
 			Pps:       ppsInt,

@@ -86,12 +86,6 @@ func StartServer() {
 
 		tags := collectUniqueTags(accounts)
 
-		ac := types.Account{
-			Id:   "",
-			Name: "All Portfolio",
-		}
-		(*accounts) = append((*accounts), ac)
-
 		accountsData := make(map[string]types.AnalyzedPortfolio, len(*accounts))
 		var wg sync.WaitGroup
 		for i := range *accounts {
@@ -105,21 +99,13 @@ func StartServer() {
 
 		var filteredAccounts []types.Account
 		for _, ac := range *accounts {
-			if ac.Id == "" {
-				continue
-			}
 			if tagFilter == "All" || hasTag(ac.Tags, tagFilter) {
 				filteredAccounts = append(filteredAccounts, ac)
 			}
 		}
 
-		var allPortfolioData types.AnalyzedPortfolio
-		if tagFilter == "All" {
-			allPortfolioData = accountsData[""]
-		} else {
-			filteredIds := getFilteredAccountIds(accounts, tagFilter)
-			allPortfolioData, _ = portfolio.LoadAndAnalyzeAccounts(db, filteredIds)
-		}
+		filteredIds := getFilteredAccountIds(accounts, tagFilter)
+		allPortfolioData, _ := portfolio.LoadAndAnalyzeAccounts(db, filteredIds)
 
 		c.HTML(http.StatusOK, "index.html", gin.H{
 			"accounts":         &filteredAccounts,

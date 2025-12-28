@@ -107,23 +107,37 @@ func UpdateMarketData(db *sql.DB) {
 	}
 
 	if len(allTransactions) > 0 {
-		stat, err := tx.PrepareContext(ctx, "INSERT OR REPLACE INTO dividends_splits (id, account_id, symbol, date, transaction_type, quantity, pps) VALUES (?, ?, ?, ?, ?, ?, ?)")
+		// Delete existing records for symbols we're updating, then insert fresh data
+		symbolSet := make(map[string]bool)
+		for _, tr := range allTransactions {
+			symbolSet[tr.Symbol] = true
+		}
+
+		for symbol := range symbolSet {
+			_, err := tx.ExecContext(ctx, "DELETE FROM dividends_splits WHERE symbol = ?", symbol)
+			if err != nil {
+				logger.Error("error deleting existing dividends/splits", slog.String("symbol", symbol), slog.Any("error", err))
+			}
+		}
+
+		stat, err := tx.PrepareContext(ctx, "INSERT INTO dividends_splits (id, account_id, symbol, date, transaction_type, quantity, pps) VALUES (?, ?, ?, ?, ?, ?, ?)")
 		if err != nil {
-			logger.Error("error creating statement to update dividends", slog.Any("error", err))
+			logger.Error("error creating statement to insert dividends", slog.Any("error", err))
 		} else {
 			defer stat.Close()
 			for _, tr := range allTransactions {
+				dateStr := tr.Date.Format("2006-01-02")
 				_, err = stat.Exec(
 					tr.Id,
 					tr.AccountId,
 					tr.Symbol,
-					tr.Date,
+					dateStr,
 					tr.Type,
 					tr.Quantity,
 					tr.Pps,
 				)
 				if err != nil {
-					logger.Error("error executing statement to update transaction", slog.Any("transaction", tr), slog.Any("error", err))
+					logger.Error("error inserting transaction", slog.Any("transaction", tr), slog.Any("error", err))
 				}
 			}
 		}
