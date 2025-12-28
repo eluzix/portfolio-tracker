@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"sort"
 	"strconv"
+	"strings"
 	"time"
 	"tracker/loaders"
 	"tracker/types"
@@ -117,13 +118,22 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	}
 	symbolsSection := tview.NewTextView().SetText(symbolsText).SetWrap(true)
 
+	tagsText := "Tags: "
+	if len(account.Tags) > 0 {
+		tagsText += strings.Join(account.Tags, ", ")
+	} else {
+		tagsText += "-"
+	}
+	tagsSection := tview.NewTextView().SetText(tagsText).SetWrap(true)
+
 	head := tview.NewFlex().AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
 		AddItem(accountTitle, 1, 1, false).
 		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Institution: %s", account.Institution)), 1, 1, false).
 		AddItem(tview.NewTextView().SetText(fmt.Sprintf("Inception: %s", portfolio.FirstTransaction.Date.Format("2006-01-02"))), 1, 1, false).
 		AddItem(valuesSection, 1, 2, false).
 		AddItem(yieldsSection, 1, 2, false).
-		AddItem(symbolsSection, 2, 1, false), 0, 2, false)
+		AddItem(symbolsSection, 2, 1, false).
+		AddItem(tagsSection, 1, 1, false), 0, 2, false)
 	head.SetBackgroundColor(theme.HeaderBg)
 
 	transactionsTable := TransactionsTable(db, analysis, account.Id, app, pages, theme)

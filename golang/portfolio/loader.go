@@ -8,7 +8,6 @@ import (
 )
 
 func LoadAndAnalyze(db *sql.DB, account types.Account) (types.AnalyzedPortfolio, error) {
-	// log := logging.Get()
 	var transactions *[]types.Transaction
 
 	if account.Id != "" {
@@ -17,8 +16,24 @@ func LoadAndAnalyze(db *sql.DB, account types.Account) (types.AnalyzedPortfolio,
 		transactions, _ = loaders.AllTransactions(db)
 	}
 
+	return analyzeTransactionSet(db, transactions)
+}
+
+func LoadAndAnalyzeAccounts(db *sql.DB, accountIds []string) (types.AnalyzedPortfolio, error) {
+	if len(accountIds) == 0 {
+		return types.AnalyzedPortfolio{}, nil
+	}
+
+	transactions, _ := loaders.AccountsTransactions(db, accountIds)
+	return analyzeTransactionSet(db, transactions)
+}
+
+func analyzeTransactionSet(db *sql.DB, transactions *[]types.Transaction) (types.AnalyzedPortfolio, error) {
+	if len(*transactions) == 0 {
+		return types.AnalyzedPortfolio{}, nil
+	}
+
 	symbols := loaders.SymbolsFromTransactions(transactions)
-	// log.Info("Account>>>>", slog.Any("account", account))
 
 	firstTr := (*transactions)[0]
 	dividends, _ := loaders.DividendsAndSplits(db, symbols, firstTr.Date)

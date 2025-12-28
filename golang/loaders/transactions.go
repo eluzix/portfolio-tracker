@@ -51,6 +51,37 @@ func AccountTransactions(db *sql.DB, accountId string) (*[]types.Transaction, er
 
 }
 
+func AccountsTransactions(db *sql.DB, accountIds []string) (*[]types.Transaction, error) {
+	if len(accountIds) == 0 {
+		return &[]types.Transaction{}, nil
+	}
+
+	log := logging.Get()
+	ph := make([]string, len(accountIds))
+	args := make([]any, len(accountIds))
+	for i, id := range accountIds {
+		ph[i] = "?"
+		args[i] = id
+	}
+
+	query := fmt.Sprintf("SELECT id,account_id,symbol,date,transaction_type,quantity,pps from transactions WHERE account_id IN (%s)", strings.Join(ph, ","))
+	rows, err := db.Query(query, args...)
+	if err != nil {
+		log.Error("failed to get transactions for accounts", slog.Any("error", err))
+		return nil, err
+	}
+	defer rows.Close()
+
+	transactions := make([]types.Transaction, 0)
+	for rows.Next() {
+		var tr types.Transaction
+		_ = rows.Scan(&tr.Id, &tr.AccountId, &tr.Symbol, &tr.Date, &tr.Type, &tr.Quantity, &tr.Pps)
+		transactions = append(transactions, tr)
+	}
+
+	return &transactions, nil
+}
+
 func DividendsAndSplits(db *sql.DB, symbols []string, after time.Time) (*[]types.Transaction, error) {
 	log := logging.Get()
 	ph := make([]string, len(symbols))
