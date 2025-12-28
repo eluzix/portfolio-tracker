@@ -2,7 +2,6 @@ package tui
 
 import (
 	"database/sql"
-	"sync"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -242,15 +241,10 @@ func StartApp(db *sql.DB) {
 	accounts, _ := loaders.UserAccounts(db)
 
 	accountsData := make(map[string]types.AnalyzedPortfolio, len(*accounts))
-	var wg sync.WaitGroup
-	for i := range *accounts {
-		wg.Go(func() {
-			ac := (*accounts)[i]
-			data, _ := portfolio.LoadAndAnalyze(db, ac)
-			accountsData[ac.Id] = data
-		})
+	for _, ac := range *accounts {
+		data, _ := portfolio.LoadAndAnalyze(db, ac)
+		accountsData[ac.Id] = data
 	}
-	wg.Wait()
 
 	analysis := types.NewAnalysisData(accounts, accountsData)
 
