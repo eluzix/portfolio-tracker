@@ -12,15 +12,7 @@
             crossorigin="anonymous"></script>
     <title>Portfolio Tracker</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
-    <style>
-        :root {
-            --pico-font-size: 16px;
-        }
-
-        .err {
-            color: var(--pico-del-color);
-        }
-    </style>
+    <link rel="stylesheet" href="/static/theme.css">
 </head>
 <body>
 
@@ -93,7 +85,7 @@
              </tr>
             {{end}}
             {{$all := .allPortfolioData}}
-            <tr class="err">
+            <tr class="summary-row">
             <th scope="row"></th>
             <td><strong>All Portfolio</strong></td>
             <td>{{toCurrencyWithRate $all.TotalInvested 0 $symbol $rate}}</td>

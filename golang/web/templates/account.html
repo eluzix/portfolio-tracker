@@ -12,53 +12,16 @@
             crossorigin="anonymous"></script>
     <title>{{.account.Name}} - Portfolio Tracker</title>
     <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+    <link rel="stylesheet" href="/static/theme.css">
     <style>
-        :root {
-            --pico-font-size: 16px;
-        }
-        .account-header {
-            background: var(--pico-card-background-color);
-            padding: 1rem;
-            border-radius: var(--pico-border-radius);
-            margin-bottom: 1rem;
-        }
         .account-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
             gap: 1rem;
             margin: 1rem 0;
         }
-        .stat-item {
-            text-align: center;
-        }
-        .stat-label {
-            font-size: 0.85rem;
-            color: var(--pico-muted-color);
-        }
-        .stat-value {
-            font-size: 1.1rem;
-            font-weight: bold;
-        }
         .holdings {
             margin: 1rem 0;
-        }
-        .holding-badge {
-            display: inline-block;
-            background: var(--pico-primary-background);
-            color: var(--pico-primary-inverse);
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--pico-border-radius);
-            margin: 0.25rem;
-            font-size: 0.85rem;
-        }
-        .tag-badge {
-            display: inline-block;
-            background: var(--pico-secondary-background);
-            color: var(--pico-secondary-inverse);
-            padding: 0.25rem 0.5rem;
-            border-radius: var(--pico-border-radius);
-            margin: 0.25rem;
-            font-size: 0.85rem;
         }
     </style>
 </head>
