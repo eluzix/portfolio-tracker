@@ -30,7 +30,35 @@
     </hgroup>
 </header>
     <main class="container">
-      <div id="accounts">
+      <div id="portfolio-view">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+          <fieldset role="group" style="width: fit-content; gap: 0.5rem; margin-bottom: 0;">
+            <label>
+              <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
+                     hx-get="/?currency=USD&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
+              $ USD
+            </label>
+            <label>
+              <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
+                     hx-get="/?currency=ILS&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
+              ₪ ILS
+            </label>
+          </fieldset>
+
+          <div>
+            <label style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
+              Tag:
+              <select name="tag" hx-get="/?currency={{.currency}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML"
+                      style="width: auto; margin-bottom: 0;">
+                {{range .tags}}
+                <option value="{{.}}" {{if eq $.tagFilter .}}selected{{end}}>{{.}}</option>
+                {{end}}
+              </select>
+            </label>
+          </div>
+        </div>
+
+        <div id="accounts">
         <table class="striped">
           <thead>
           <tr>
@@ -46,32 +74,46 @@
              </tr>
            </thead>
           <tbody>
-            {{$data := .accountsData}} 
+            {{$data := .accountsData}}
+            {{$symbol := .currencySymbol}}
+            {{$rate := .exchangeRate}}
             {{range .accounts}}
             {{$acData := (index $data .Id)}}
             <tr>
             <th scope="row">{{.Id}}</th>
             <td>{{.Name}}</td>
-            <td>{{toCurrency $acData.TotalInvested 0}}</td>
-            <td>{{toCurrency $acData.TotalWithdrawn 0}}</td>
-            <td>{{toCurrency $acData.TotalDividends 0}}</td>
+            <td>{{toCurrencyWithRate $acData.TotalInvested 0 $symbol $rate}}</td>
+            <td>{{toCurrencyWithRate $acData.TotalWithdrawn 0 $symbol $rate}}</td>
+            <td>{{toCurrencyWithRate $acData.TotalDividends 0 $symbol $rate}}</td>
             <td>{{toYield $acData.Gain}}</td>
             <td>{{toYield $acData.AnnualizedYield}}</td>
             <td>{{toYield $acData.ModifiedDietzYield}}</td>
-            <td>{{toCurrency $acData.Value 0}}</td>
+            <td>{{toCurrencyWithRate $acData.Value 0 $symbol $rate}}</td>
              </tr>
             {{end}}
+            {{$all := .allPortfolioData}}
+            <tr class="err">
+            <th scope="row"></th>
+            <td><strong>All Portfolio</strong></td>
+            <td>{{toCurrencyWithRate $all.TotalInvested 0 $symbol $rate}}</td>
+            <td>{{toCurrencyWithRate $all.TotalWithdrawn 0 $symbol $rate}}</td>
+            <td>{{toCurrencyWithRate $all.TotalDividends 0 $symbol $rate}}</td>
+            <td>{{toYield $all.Gain}}</td>
+            <td>{{toYield $all.AnnualizedYield}}</td>
+            <td>{{toYield $all.ModifiedDietzYield}}</td>
+            <td>{{toCurrencyWithRate $all.Value 0 $symbol $rate}}</td>
+            </tr>
           </tbody>
         </table>
+        </div>
       </div>
 
       <div style="text-align: center">
-        <button hx-post="/updateMarket" hx-trigger="click" hx-target="#action-response">Update Market Data</button>
+        <button hx-post="/updateMarket" hx-trigger="click" hx-target="#action-response" hx-indicator="#market-loader">Update Market Data</button>
+        <div id="market-loader" class="htmx-indicator" style="margin-top: 1rem;">
+          <progress></progress>
+        </div>
         <div id="action-response"></div>
-      </div>
-
-      <div class="container htmx-indicator" id="loader">
-        <progress/>
       </div>
       <div class="container" id="results"></div>
     </main>
