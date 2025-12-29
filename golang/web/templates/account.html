@@ -101,18 +101,21 @@
         </article>
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-            <fieldset role="group" style="width: fit-content; gap: 0.5rem; margin-bottom: 0;">
-                <label>
-                    <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
-                           hx-get="/account/{{.account.Id}}?currency=USD&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
-                    $ USD
-                </label>
-                <label>
-                    <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
-                           hx-get="/account/{{.account.Id}}?currency=ILS&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
-                    ₪ ILS
-                </label>
-            </fieldset>
+            <div style="display: flex; align-items: center; gap: 0.75rem;">
+                <fieldset role="group" style="display: flex; flex-direction: row; width: fit-content; gap: 0.5rem; margin-bottom: 0; flex-shrink: 0;">
+                    <label>
+                        <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
+                               hx-get="/account/{{.account.Id}}?currency=USD&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
+                        $ USD
+                    </label>
+                    <label>
+                        <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
+                               hx-get="/account/{{.account.Id}}?currency=ILS&showDividends={{.showDividends}}" hx-target="#account-view" hx-select="#account-view" hx-swap="outerHTML">
+                        ₪ ILS
+                    </label>
+                </fieldset>
+                {{if eq .currency "ILS"}}<div><small style="opacity: 0.7; white-space: nowrap;">1 USD = {{printf "%.2f" .exchangeRate}} ILS</small></div>{{end}}
+            </div>
 
             <fieldset role="group" style="width: fit-content; margin-bottom: 0;">
                 <label>

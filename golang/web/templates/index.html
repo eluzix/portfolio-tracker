@@ -25,18 +25,21 @@
     <main class="container">
       <div id="portfolio-view">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-          <fieldset role="group" style="width: fit-content; gap: 0.5rem; margin-bottom: 0;">
-            <label>
-              <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
-                     hx-get="/?currency=USD&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
-              $ USD
-            </label>
-            <label>
-              <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
-                     hx-get="/?currency=ILS&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
-              ₪ ILS
-            </label>
-          </fieldset>
+          <div style="display: flex; align-items: center; gap: 0.75rem;">
+            <fieldset role="group" style="display: flex; flex-direction: row; width: fit-content; gap: 0.5rem; margin-bottom: 0; flex-shrink: 0;">
+              <label>
+                <input type="radio" name="currency" value="USD" {{if eq .currency "USD"}}checked{{end}}
+                       hx-get="/?currency=USD&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
+                $ USD
+              </label>
+              <label>
+                <input type="radio" name="currency" value="ILS" {{if eq .currency "ILS"}}checked{{end}}
+                       hx-get="/?currency=ILS&tag={{.tagFilter}}" hx-target="#portfolio-view" hx-select="#portfolio-view" hx-swap="outerHTML">
+                ₪ ILS
+              </label>
+            </fieldset>
+            {{if eq .currency "ILS"}}<div><small style="opacity: 0.7; white-space: nowrap;">1 USD = {{printf "%.2f" .exchangeRate}} ILS</small></div>{{end}}
+          </div>
 
           <div>
             <label style="display: inline-flex; align-items: center; gap: 0.5rem; margin-bottom: 0;">
