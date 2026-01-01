@@ -88,7 +88,7 @@ func OpenDatabase() (*sql.DB, func()) {
 
 	connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
 		libsql.WithAuthToken(authToken),
-		libsql.WithReadYourWrites(false),
+		libsql.WithReadYourWrites(true),
 	)
 	if err != nil {
 		// fmt.Println("Error creating connector:", err)
