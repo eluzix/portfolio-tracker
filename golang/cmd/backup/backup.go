@@ -7,52 +7,14 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"tracker/market"
 	"tracker/storage"
-	"tracker/tui"
-	"tracker/web"
 )
 
 func main() {
-
-	if len(os.Args) == 2 {
-		switch os.Args[1] {
-		case "help":
-			fmt.Println("Usage: tracker [help|update|server|backup]")
-			fmt.Println("  help: show this help")
-			fmt.Println("  update: update market data")
-			fmt.Println("  server: start the web server")
-			fmt.Println("  backup: backup database to home directory")
-			fmt.Println("  (no args): start the portfolio tracker app")
-		case "update":
-			// db, cleanup := storage.OpenLocalDatabase(false)
-			db, cleanup := storage.OpenDatabase()
-			defer cleanup()
-			market.UpdateMarketData(db)
-			fmt.Println("Market data updated successfully")
-		case "server":
-			web.StartServer()
-		case "backup":
-			if err := runBackup(); err != nil {
-				fmt.Fprintf(os.Stderr, "Backup failed: %v\n", err)
-				os.Exit(1)
-			}
-		default:
-			fmt.Println("Unknown command")
-			fmt.Println("Usage: tracker [help|update|server|backup]")
-		}
-
-		return
-	} else if len(os.Args) > 2 {
-		fmt.Println("Too many arguments")
-		fmt.Println("Usage: tracker [help|update]")
-		return
+	if err := runBackup(); err != nil {
+		fmt.Fprintf(os.Stderr, "Backup failed: %v\n", err)
+		os.Exit(1)
 	}
-
-	// db, cleanup := storage.OpenLocalDatabase(false)
-	db, cleanup := storage.OpenDatabase()
-	defer cleanup()
-	tui.StartApp(db)
 }
 
 func runBackup() error {
