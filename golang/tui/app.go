@@ -2,6 +2,7 @@ package tui
 
 import (
 	"database/sql"
+	"slices"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -84,12 +85,7 @@ func computeAllPortfolioData(db *sql.DB, analysis *types.AnalysisData, tagFilter
 }
 
 func hasTag(tags []string, tag string) bool {
-	for _, t := range tags {
-		if t == tag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(tags, tag)
 }
 
 func collectUniqueTags(accounts *[]types.Account) []string {
@@ -198,6 +194,7 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 	buttonFlex.AddItem(tview.NewTextView().SetText(" "), 0, 1, false)
 
 	flex.AddItem(head, 1, 1, false)
+	flex.AddItem(tview.NewTextView().SetText(" "), 1, 1, false)
 	flex.AddItem(buttonFlex, 1, 0, false)
 	flex.AddItem(table, 0, 1, true)
 
