@@ -157,7 +157,7 @@ func SingleAccountPage(db *sql.DB, analysis *types.AnalysisData, account types.A
 	})
 
 	focusItem := 0
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	layout.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
 			if focusItem == 0 {
 				app.SetFocus(addButton)
@@ -205,6 +205,21 @@ func showAddTransactionModal(db *sql.DB, app *tview.Application, pages *tview.Pa
 	form.AddInputField("Symbol", "", 20, nil, nil)
 	form.AddInputField("Quantity", "", 20, nil, nil)
 	form.AddInputField("Price per Share", "", 20, nil, nil)
+
+	typeDropdown := form.GetFormItem(1).(*tview.DropDown)
+	symbolField := form.GetFormItem(2).(*tview.InputField)
+	typeDropdown.SetDoneFunc(func(key tcell.Key) {
+		if key == tcell.KeyEnter {
+			app.SetFocus(symbolField)
+		}
+	})
+	typeDropdown.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+		if event.Key() == tcell.KeyTab {
+			app.SetFocus(symbolField)
+			return nil
+		}
+		return event
+	})
 
 	form.AddButton("Save", func() {
 		dateStr := form.GetFormItem(0).(*tview.InputField).GetText()

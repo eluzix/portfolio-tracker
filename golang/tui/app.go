@@ -198,7 +198,7 @@ func AccountsPage(db *sql.DB, analysis *types.AnalysisData, app *tview.Applicati
 	flex.AddItem(buttonFlex, 1, 0, false)
 	flex.AddItem(table, 0, 1, true)
 
-	app.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	flex.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		if event.Key() == tcell.KeyTab {
 			if focusItem == 0 {
 				app.SetFocus(nisButton)
