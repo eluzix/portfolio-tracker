@@ -2,16 +2,18 @@
 
 ## Build/Test Commands
 - **Build**: `make build` or `go build -o tracker tracker.go`
-- **Run**: `make run` or `go run tracker.go`
+- **Run (tview)**: `./tracker` or `./tracker -tui=tview`
+- **Run (bubbletea)**: `./tracker -tui=bubble`
 - **Test all**: `make test` or `go test ./...`
 - **Test single package**: `go test ./portfolio/` (or specific package)
 - **Test single function**: `go test -run TestFunctionName ./package/`
 - **Clean**: `make clean`
+- **Help**: `./tracker help`
 
 ## Architecture
 - **Go portfolio tracker** with TUI using tview library
 - **Database**: LibSQL/SQLite with cloud replication support (Turso)
-- **Core packages**: `types/` (domain), `portfolio/` (analysis), `market/` (data fetching), `storage/` (DB), `tui/` (interface)
+- **Core packages**: `types/` (domain), `portfolio/` (analysis), `market/` (data fetching), `storage/` (DB), `tui/` (interface), `btui/` (bubbletea interface)
 - **Data sources**: MarketStack API for prices, JSONL files for migrations
 - **Pattern**: Repository pattern via loaders, interface-based design for market data
 

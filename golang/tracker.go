@@ -2,11 +2,14 @@ package main
 
 import (
 	"database/sql"
+	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
+	"tracker/btui"
 	"tracker/market"
 	"tracker/storage"
 	"tracker/tui"
@@ -14,45 +17,75 @@ import (
 )
 
 func main() {
+	tuiBackend := flag.String("tui", "tview", "TUI backend: 'tview' (classic) or 'bubble' (new bubbletea)")
+	flag.Parse()
 
-	if len(os.Args) == 2 {
-		switch os.Args[1] {
+	args := flag.Args()
+
+	if len(args) == 1 {
+		switch args[0] {
 		case "help":
-			fmt.Println("Usage: tracker [help|update|server|backup]")
-			fmt.Println("  help: show this help")
-			fmt.Println("  update: update market data")
-			fmt.Println("  server: start the web server")
-			fmt.Println("  backup: backup database to home directory")
-			fmt.Println("  (no args): start the portfolio tracker app")
+			printHelp()
+			return
 		case "update":
-			// db, cleanup := storage.OpenLocalDatabase(false)
 			db, cleanup := storage.OpenDatabase()
 			defer cleanup()
 			market.UpdateMarketData(db)
 			fmt.Println("Market data updated successfully")
+			return
 		case "server":
 			web.StartServer()
+			return
 		case "backup":
 			if err := runBackup(); err != nil {
 				fmt.Fprintf(os.Stderr, "Backup failed: %v\n", err)
 				os.Exit(1)
 			}
+			return
 		default:
-			fmt.Println("Unknown command")
-			fmt.Println("Usage: tracker [help|update|server|backup]")
+			fmt.Printf("Unknown command: %s\n", args[0])
+			printHelp()
+			return
 		}
-
-		return
-	} else if len(os.Args) > 2 {
+	} else if len(args) > 1 {
 		fmt.Println("Too many arguments")
-		fmt.Println("Usage: tracker [help|update]")
+		printHelp()
 		return
 	}
 
-	// db, cleanup := storage.OpenLocalDatabase(false)
 	db, cleanup := storage.OpenDatabase()
 	defer cleanup()
-	tui.StartApp(db)
+
+	switch strings.ToLower(*tuiBackend) {
+	case "bubble", "bubbletea":
+		btui.StartApp(db)
+	case "tview", "classic":
+		tui.StartApp(db)
+	default:
+		fmt.Printf("Unknown TUI backend: %s (use 'tview' or 'bubble')\n", *tuiBackend)
+		os.Exit(1)
+	}
+}
+
+func printHelp() {
+	fmt.Println("Usage: tracker [options] [command]")
+	fmt.Println()
+	fmt.Println("Commands:")
+	fmt.Println("  help     Show this help")
+	fmt.Println("  update   Update market data")
+	fmt.Println("  server   Start the web server")
+	fmt.Println("  backup   Backup database to home directory")
+	fmt.Println("  (none)   Start the portfolio tracker TUI")
+	fmt.Println()
+	fmt.Println("Options:")
+	fmt.Println("  -tui string")
+	fmt.Println("        TUI backend: 'tview' (classic) or 'bubble' (new bubbletea)")
+	fmt.Println("        Default: tview")
+	fmt.Println()
+	fmt.Println("Examples:")
+	fmt.Println("  tracker                  Start with classic tview TUI")
+	fmt.Println("  tracker -tui=bubble      Start with new bubbletea TUI")
+	fmt.Println("  tracker update           Update market data")
 }
 
 func runBackup() error {
