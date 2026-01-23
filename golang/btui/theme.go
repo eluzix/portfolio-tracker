@@ -28,7 +28,7 @@ var DefaultTheme = Theme{
 	Secondary:    lipgloss.Color("#7dcfff"),
 	HeaderBg:     lipgloss.Color("#24283b"),
 	HeaderFg:     lipgloss.Color("#e0e6f0"),
-	SelectedBg:   lipgloss.Color("#7aa2f7"),
+	SelectedBg:   lipgloss.Color("#d4a5c8"),
 	SelectedFg:   lipgloss.Color("#1a1b26"),
 	Positive:     lipgloss.Color("#9ece6a"),
 	Negative:     lipgloss.Color("#f7768e"),

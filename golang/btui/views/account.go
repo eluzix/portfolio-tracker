@@ -165,7 +165,7 @@ func (v *AccountDetailView) rebuildTable() {
 	s.Selected = lipgloss.NewStyle().
 		Bold(true).
 		Foreground(lipgloss.Color("#1a1b26")).
-		Background(lipgloss.Color("#7aa2f7")).
+		Background(lipgloss.Color("#d4a5c8")).
 		Padding(0, 1)
 	t.SetStyles(s)
 
