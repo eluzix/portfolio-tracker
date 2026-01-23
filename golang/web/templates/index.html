@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link
             rel="stylesheet"
-            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.pumpkin.min.css"
+            href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
     >
     <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"
             integrity="sha384-ZBXiYtYQ6hJ2Y0ZNoYuI+Nq5MqWBr+chMrS/RkXpNzQCApHEhOt2aY8EJgqwHLkJ"
@@ -58,16 +58,16 @@
         <table class="striped">
           <thead>
           <tr>
-          <th scope="col">ID</th>
-          <th scope="col">Account Name</th>
-          <th scope="col">Total Invested</th>
-            <th scope="col">Total Withdrawn</th>
-              <th scope="col">Total Dividends</th>
-               <th scope="col">Gain</th>
-               <th scope="col">Annualized Yield</th>
-               <th scope="col">Dietz Yield</th>
-               <th scope="col">Value</th>
-             </tr>
+            <th scope="col">ID</th>
+            <th scope="col">Account Name</th>
+            <th scope="col">Value</th>
+            <th scope="col">Invested</th>
+            <th scope="col">Withdrawn</th>
+            <th scope="col">Dividends</th>
+            <th scope="col">Gain</th>
+            <th scope="col">Annual</th>
+            <th scope="col">Dietz</th>
+          </tr>
            </thead>
           <tbody>
             {{$data := .accountsData}}
@@ -76,28 +76,28 @@
             {{range .accounts}}
             {{$acData := (index $data .Id)}}
             <tr>
-            <th scope="row">{{.Id}}</th>
-            <td><a href="/account/{{.Id}}?currency={{$.currency}}">{{.Name}}</a></td>
-            <td>{{toCurrencyWithRate $acData.TotalInvested 0 $symbol $rate}}</td>
-            <td>{{toCurrencyWithRate $acData.TotalWithdrawn 0 $symbol $rate}}</td>
-            <td>{{toCurrencyWithRate $acData.TotalDividends 0 $symbol $rate}}</td>
-            <td>{{toYield $acData.Gain}}</td>
-            <td>{{toYield $acData.AnnualizedYield}}</td>
-            <td>{{toYield $acData.ModifiedDietzYield}}</td>
-            <td>{{toCurrencyWithRate $acData.Value 0 $symbol $rate}}</td>
-             </tr>
+              <th scope="row">{{.Id}}</th>
+              <td><a href="/account/{{.Id}}?currency={{$.currency}}">{{.Name}}</a></td>
+              <td>{{toCurrencyWithRate $acData.Value 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $acData.TotalInvested 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $acData.TotalWithdrawn 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $acData.TotalDividends 0 $symbol $rate}}</td>
+              <td>{{toYield $acData.Gain}}</td>
+              <td>{{toYield $acData.AnnualizedYield}}</td>
+              <td>{{toYield $acData.ModifiedDietzYield}}</td>
+            </tr>
             {{end}}
             {{$all := .allPortfolioData}}
             <tr class="summary-row">
-            <th scope="row"></th>
-            <td><strong>All Portfolio</strong></td>
-            <td>{{toCurrencyWithRate $all.TotalInvested 0 $symbol $rate}}</td>
-            <td>{{toCurrencyWithRate $all.TotalWithdrawn 0 $symbol $rate}}</td>
-            <td>{{toCurrencyWithRate $all.TotalDividends 0 $symbol $rate}}</td>
-            <td>{{toYield $all.Gain}}</td>
-            <td>{{toYield $all.AnnualizedYield}}</td>
-            <td>{{toYield $all.ModifiedDietzYield}}</td>
-            <td>{{toCurrencyWithRate $all.Value 0 $symbol $rate}}</td>
+              <th scope="row"></th>
+              <td><strong>All Portfolio</strong></td>
+              <td>{{toCurrencyWithRate $all.Value 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $all.TotalInvested 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $all.TotalWithdrawn 0 $symbol $rate}}</td>
+              <td>{{toCurrencyWithRate $all.TotalDividends 0 $symbol $rate}}</td>
+              <td>{{toYield $all.Gain}}</td>
+              <td>{{toYield $all.AnnualizedYield}}</td>
+              <td>{{toYield $all.ModifiedDietzYield}}</td>
             </tr>
           </tbody>
         </table>
