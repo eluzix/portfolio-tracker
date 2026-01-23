@@ -46,30 +46,30 @@ func DefaultAccountDetailStyles() AccountDetailStyles {
 		Container: lipgloss.NewStyle().
 			Padding(0, 1),
 		Header: lipgloss.NewStyle().
-			Background(lipgloss.Color("#312e81")).
-			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(0, 2).
 			MarginBottom(1),
 		Title: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22c55e")).
+			Foreground(lipgloss.Color("#9ece6a")).
 			Bold(true),
 		Subtitle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#a5b4fc")),
+			Foreground(lipgloss.Color("#7aa2f7")),
 		InfoSection: lipgloss.NewStyle().
 			Padding(0, 2).
 			MarginBottom(1),
 		InfoLabel: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280")),
+			Foreground(lipgloss.Color("#737aa2")),
 		InfoValue: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#eaeaea")),
+			Foreground(lipgloss.Color("#e0e6f0")),
 		Positive: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22c55e")),
+			Foreground(lipgloss.Color("#9ece6a")),
 		Negative: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ef4444")),
+			Foreground(lipgloss.Color("#f7768e")),
 		Holdings: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22d3ee")),
+			Foreground(lipgloss.Color("#7dcfff")),
 		Tags: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#a5b4fc")).
+			Foreground(lipgloss.Color("#ff9e64")).
 			Italic(true),
 	}
 }
@@ -156,16 +156,16 @@ func (v *AccountDetailView) rebuildTable() {
 	s := table.DefaultStyles()
 	s.Header = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#312e81")).
+		Foreground(lipgloss.Color("#1a1b26")).
+		Background(lipgloss.Color("#bb9af7")).
 		Padding(0, 1)
 	s.Cell = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#eaeaea")).
+		Foreground(lipgloss.Color("#e0e6f0")).
 		Padding(0, 1)
 	s.Selected = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#6366f1")).
+		Foreground(lipgloss.Color("#1a1b26")).
+		Background(lipgloss.Color("#7aa2f7")).
 		Padding(0, 1)
 	t.SetStyles(s)
 

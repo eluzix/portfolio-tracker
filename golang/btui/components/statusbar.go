@@ -27,27 +27,27 @@ type StatusBarStyles struct {
 func DefaultStatusBarStyles() StatusBarStyles {
 	return StatusBarStyles{
 		Bar: lipgloss.NewStyle().
-			Background(lipgloss.Color("#312e81")).
-			Foreground(lipgloss.Color("#eaeaea")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(0, 1),
 		Mode: lipgloss.NewStyle().
-			Background(lipgloss.Color("#7c3aed")).
-			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#bb9af7")).
+			Foreground(lipgloss.Color("#1a1b26")).
 			Padding(0, 1).
 			Bold(true),
 		Hint: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280")),
+			Foreground(lipgloss.Color("#737aa2")),
 		Status: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22d3ee")),
+			Foreground(lipgloss.Color("#7dcfff")),
 		Spinner: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22d3ee")),
+			Foreground(lipgloss.Color("#ff9e64")),
 	}
 }
 
 func NewStatusBar() StatusBar {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#22d3ee"))
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#7dcfff"))
 
 	return StatusBar{
 		mode:    "NORMAL",

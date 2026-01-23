@@ -20,14 +20,14 @@ type HeaderStyles struct {
 func DefaultHeaderStyles() HeaderStyles {
 	return HeaderStyles{
 		Bar: lipgloss.NewStyle().
-			Background(lipgloss.Color("#312e81")).
-			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(0, 2),
 		Title: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ffffff")).
+			Foreground(lipgloss.Color("#ff9e64")).
 			Bold(true),
 		Subtitle: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#a5b4fc")),
+			Foreground(lipgloss.Color("#7aa2f7")),
 	}
 }
 

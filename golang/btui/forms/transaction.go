@@ -32,13 +32,13 @@ type TransactionFormStyles struct {
 func DefaultTransactionFormStyles() TransactionFormStyles {
 	return TransactionFormStyles{
 		Container: lipgloss.NewStyle().
-			Background(lipgloss.Color("#27273a")).
-			Foreground(lipgloss.Color("#eaeaea")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(1, 2).
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#7c3aed")),
+			BorderForeground(lipgloss.Color("#bb9af7")),
 		Title: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#7c3aed")).
+			Foreground(lipgloss.Color("#ff9e64")).
 			Bold(true).
 			MarginBottom(1),
 	}
@@ -210,26 +210,26 @@ func (f TransactionForm) View() string {
 	return lipgloss.Place(f.width, f.height,
 		lipgloss.Center, lipgloss.Center,
 		modal,
-		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1a2e")),
+		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1b26")),
 	)
 }
 
 func getFormTheme() *huh.Theme {
-	t := huh.ThemeDracula()
+	t := huh.ThemeCatppuccin()
 
 	t.Focused.Base = t.Focused.Base.
-		BorderForeground(lipgloss.Color("#7c3aed"))
+		BorderForeground(lipgloss.Color("#bb9af7"))
 	t.Focused.Title = t.Focused.Title.
-		Foreground(lipgloss.Color("#22d3ee"))
+		Foreground(lipgloss.Color("#7dcfff"))
 	t.Focused.Description = t.Focused.Description.
-		Foreground(lipgloss.Color("#6b7280"))
+		Foreground(lipgloss.Color("#737aa2"))
 	t.Focused.TextInput.Cursor = t.Focused.TextInput.Cursor.
-		Foreground(lipgloss.Color("#7c3aed"))
+		Foreground(lipgloss.Color("#ff9e64"))
 	t.Focused.SelectSelector = t.Focused.SelectSelector.
-		Foreground(lipgloss.Color("#7c3aed"))
+		Foreground(lipgloss.Color("#ff9e64"))
 
 	t.Blurred.Base = t.Blurred.Base.
-		BorderForeground(lipgloss.Color("#475569"))
+		BorderForeground(lipgloss.Color("#414868"))
 
 	return t
 }

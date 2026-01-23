@@ -46,16 +46,16 @@ func DefaultAccountsStyles() AccountsStyles {
 			Padding(0, 2).
 			MarginBottom(1),
 		InfoLabel: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280")),
+			Foreground(lipgloss.Color("#737aa2")),
 		InfoValue: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22d3ee")).
+			Foreground(lipgloss.Color("#7dcfff")).
 			Bold(true),
 		Positive: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22c55e")),
+			Foreground(lipgloss.Color("#9ece6a")),
 		Negative: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ef4444")),
+			Foreground(lipgloss.Color("#f7768e")),
 		TotalRow: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#fbbf24")).
+			Foreground(lipgloss.Color("#e0af68")).
 			Bold(true),
 	}
 }
@@ -156,16 +156,16 @@ func (v *AccountsView) rebuildTable() {
 	s := table.DefaultStyles()
 	s.Header = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#312e81")).
+		Foreground(lipgloss.Color("#1a1b26")).
+		Background(lipgloss.Color("#bb9af7")).
 		Padding(0, 1)
 	s.Cell = lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#eaeaea")).
+		Foreground(lipgloss.Color("#e0e6f0")).
 		Padding(0, 1)
 	s.Selected = lipgloss.NewStyle().
 		Bold(true).
-		Foreground(lipgloss.Color("#ffffff")).
-		Background(lipgloss.Color("#6366f1")).
+		Foreground(lipgloss.Color("#1a1b26")).
+		Background(lipgloss.Color("#7aa2f7")).
 		Padding(0, 1)
 	t.SetStyles(s)
 

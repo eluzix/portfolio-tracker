@@ -29,33 +29,33 @@ type ConfirmDialogStyles struct {
 func DefaultConfirmDialogStyles() ConfirmDialogStyles {
 	return ConfirmDialogStyles{
 		Container: lipgloss.NewStyle().
-			Background(lipgloss.Color("#27273a")).
-			Foreground(lipgloss.Color("#eaeaea")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(1, 3).
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#7c3aed")).
+			BorderForeground(lipgloss.Color("#bb9af7")).
 			Width(50),
 		Title: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#ef4444")).
+			Foreground(lipgloss.Color("#f7768e")).
 			Bold(true).
 			MarginBottom(1),
 		Message: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#eaeaea")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			MarginBottom(1),
 		Button: lipgloss.NewStyle().
-			Background(lipgloss.Color("#475569")).
-			Foreground(lipgloss.Color("#eaeaea")).
+			Background(lipgloss.Color("#414868")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(0, 2).
 			MarginRight(2),
 		ButtonActive: lipgloss.NewStyle().
-			Background(lipgloss.Color("#6366f1")).
-			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#7aa2f7")).
+			Foreground(lipgloss.Color("#1a1b26")).
 			Padding(0, 2).
 			MarginRight(2).
 			Bold(true),
 		ButtonDanger: lipgloss.NewStyle().
-			Background(lipgloss.Color("#ef4444")).
-			Foreground(lipgloss.Color("#ffffff")).
+			Background(lipgloss.Color("#f7768e")).
+			Foreground(lipgloss.Color("#1a1b26")).
 			Padding(0, 2).
 			MarginRight(2).
 			Bold(true),
@@ -141,7 +141,7 @@ func (d ConfirmDialog) View() string {
 
 	buttons := lipgloss.JoinHorizontal(lipgloss.Left, yesButton, noButton)
 	hint := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("#6b7280")).
+		Foreground(lipgloss.Color("#737aa2")).
 		Italic(true).
 		MarginTop(1).
 		Render("y/n to choose • ←/→ to navigate • enter to confirm")
@@ -152,6 +152,6 @@ func (d ConfirmDialog) View() string {
 	return lipgloss.Place(d.width, d.height,
 		lipgloss.Center, lipgloss.Center,
 		modal,
-		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1a2e")),
+		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1b26")),
 	)
 }

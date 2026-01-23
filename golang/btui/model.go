@@ -63,7 +63,7 @@ type Model struct {
 func NewModel(db *sql.DB) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
-	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#22d3ee"))
+	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff9e64"))
 
 	h := help.New()
 	h.Styles.ShortKey = AppStyles.HelpKey

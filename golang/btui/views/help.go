@@ -25,29 +25,29 @@ type HelpStyles struct {
 func DefaultHelpStyles() HelpStyles {
 	return HelpStyles{
 		Overlay: lipgloss.NewStyle().
-			Background(lipgloss.Color("#1a1a2e")),
+			Background(lipgloss.Color("#1a1b26")),
 		Container: lipgloss.NewStyle().
-			Background(lipgloss.Color("#27273a")).
-			Foreground(lipgloss.Color("#eaeaea")).
+			Background(lipgloss.Color("#24283b")).
+			Foreground(lipgloss.Color("#e0e6f0")).
 			Padding(1, 3).
 			BorderStyle(lipgloss.RoundedBorder()).
-			BorderForeground(lipgloss.Color("#7c3aed")),
+			BorderForeground(lipgloss.Color("#bb9af7")),
 		Title: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#7c3aed")).
+			Foreground(lipgloss.Color("#ff9e64")).
 			Bold(true).
 			MarginBottom(1),
 		Section: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#a5b4fc")).
+			Foreground(lipgloss.Color("#7aa2f7")).
 			Bold(true).
 			MarginTop(1),
 		Key: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#22d3ee")).
+			Foreground(lipgloss.Color("#7dcfff")).
 			Bold(true).
 			Width(12),
 		Desc: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280")),
+			Foreground(lipgloss.Color("#737aa2")),
 		Hint: lipgloss.NewStyle().
-			Foreground(lipgloss.Color("#6b7280")).
+			Foreground(lipgloss.Color("#737aa2")).
 			Italic(true).
 			MarginTop(1),
 	}
@@ -99,7 +99,7 @@ func (h HelpView) View() string {
 	return lipgloss.Place(h.width, h.height,
 		lipgloss.Center, lipgloss.Center,
 		modal,
-		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1a2e")),
+		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1b26")),
 	)
 }
 

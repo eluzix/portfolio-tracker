@@ -22,22 +22,22 @@ type Theme struct {
 }
 
 var DefaultTheme = Theme{
-	Background:   lipgloss.Color("#1a1a2e"),
-	Foreground:   lipgloss.Color("#eaeaea"),
-	Primary:      lipgloss.Color("#7c3aed"),
-	Secondary:    lipgloss.Color("#22d3ee"),
-	HeaderBg:     lipgloss.Color("#312e81"),
-	HeaderFg:     lipgloss.Color("#ffffff"),
-	SelectedBg:   lipgloss.Color("#6366f1"),
-	SelectedFg:   lipgloss.Color("#ffffff"),
-	Positive:     lipgloss.Color("#22c55e"),
-	Negative:     lipgloss.Color("#ef4444"),
-	Muted:        lipgloss.Color("#6b7280"),
-	Border:       lipgloss.Color("#475569"),
-	ButtonBg:     lipgloss.Color("#fbbf24"),
-	ButtonFg:     lipgloss.Color("#1a1a2e"),
-	ModalBg:      lipgloss.Color("#27273a"),
-	ModalFg:      lipgloss.Color("#eaeaea"),
+	Background:   lipgloss.Color("#1a1b26"),
+	Foreground:   lipgloss.Color("#e0e6f0"),
+	Primary:      lipgloss.Color("#bb9af7"),
+	Secondary:    lipgloss.Color("#7dcfff"),
+	HeaderBg:     lipgloss.Color("#24283b"),
+	HeaderFg:     lipgloss.Color("#e0e6f0"),
+	SelectedBg:   lipgloss.Color("#7aa2f7"),
+	SelectedFg:   lipgloss.Color("#1a1b26"),
+	Positive:     lipgloss.Color("#9ece6a"),
+	Negative:     lipgloss.Color("#f7768e"),
+	Muted:        lipgloss.Color("#737aa2"),
+	Border:       lipgloss.Color("#7aa2f7"),
+	ButtonBg:     lipgloss.Color("#e0af68"),
+	ButtonFg:     lipgloss.Color("#1a1b26"),
+	ModalBg:      lipgloss.Color("#24283b"),
+	ModalFg:      lipgloss.Color("#e0e6f0"),
 }
 
 type Styles struct {
