@@ -1,12 +1,12 @@
-package btui
+package tui
 
 import (
 	"database/sql"
 	"fmt"
 
-	"tracker/btui/components"
-	"tracker/btui/forms"
-	"tracker/btui/views"
+	"tracker/tui/components"
+	"tracker/tui/forms"
+	"tracker/tui/views"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"

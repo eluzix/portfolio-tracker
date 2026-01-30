@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"tracker/btui"
+	"tracker/tui"
 	"tracker/market"
 	"tracker/storage"
 	"tracker/web"
@@ -53,7 +53,7 @@ func main() {
 	db, cleanup := storage.OpenDatabase()
 	defer cleanup()
 
-	btui.StartApp(db)
+	tui.StartApp(db)
 }
 
 func printHelp() {

@@ -1,4 +1,4 @@
-package btui
+package tui
 
 import "github.com/charmbracelet/lipgloss"
 

@@ -1,4 +1,4 @@
-package btui
+package tui
 
 import (
 	"database/sql"
