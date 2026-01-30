@@ -225,9 +225,14 @@ func (v *AccountsView) buildRows() []table.Row {
 }
 
 func (v AccountsView) View() string {
+	currencyDisplay := v.currencySymbol
+	if v.currencySymbol == "₪" && v.exchangeRate != 1.0 {
+		currencyDisplay = fmt.Sprintf("%s (%.2f)", v.currencySymbol, v.exchangeRate)
+	}
+
 	infoBar := lipgloss.JoinHorizontal(lipgloss.Left,
 		v.styles.InfoLabel.Render("Currency: "),
-		v.styles.InfoValue.Render(v.currencySymbol),
+		v.styles.InfoValue.Render(currencyDisplay),
 		v.styles.InfoLabel.Render("  │  Tag: "),
 		v.styles.InfoValue.Render(v.tagFilter),
 		v.styles.InfoLabel.Render(fmt.Sprintf("  │  Accounts: %d", v.filteredCount())),

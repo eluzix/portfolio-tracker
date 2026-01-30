@@ -247,7 +247,16 @@ func (v AccountDetailView) renderHeader() string {
 func (v AccountDetailView) renderInfo() string {
 	multiplier := v.exchangeRate
 
+	currencyDisplay := v.currencySymbol
+	if v.currencySymbol == "₪" && v.exchangeRate != 1.0 {
+		currencyDisplay = fmt.Sprintf("%s (%.2f)", v.currencySymbol, v.exchangeRate)
+	}
+
 	col1 := lipgloss.JoinVertical(lipgloss.Left,
+		lipgloss.JoinHorizontal(lipgloss.Left,
+			v.styles.InfoLabel.Render("Currency: "),
+			v.styles.InfoValue.Render(currencyDisplay),
+		),
 		lipgloss.JoinHorizontal(lipgloss.Left,
 			v.styles.InfoLabel.Render("Value: "),
 			v.styles.Positive.Render(utils.ToCurrencyString(v.portfolio.Value, 0, v.currencySymbol, multiplier)),
