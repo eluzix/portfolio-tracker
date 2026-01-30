@@ -51,6 +51,7 @@ require (
 	github.com/quic-go/quic-go v0.55.0 // indirect
 	github.com/rivo/tview v0.42.1-0.20250916163949-0b5989b59ce6 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
+	github.com/robfig/cron/v3 v3.0.1 // indirect
 	github.com/tursodatabase/go-libsql v0.0.0-20250723062947-60e59c7150f4 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"slices"
 	"sort"
 	"time"
 	"tracker/loaders"
@@ -16,6 +17,7 @@ import (
 	"tracker/utils"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 )
 
 //go:embed templates/* static/*
@@ -40,12 +42,7 @@ func collectUniqueTags(accounts *[]types.Account) []string {
 }
 
 func hasTag(tags []string, tag string) bool {
-	for _, t := range tags {
-		if t == tag {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(tags, tag)
 }
 
 func getFilteredAccountIds(accounts *[]types.Account, tagFilter string) []string {
@@ -200,14 +197,18 @@ func StartServer() {
 	})
 
 	r.POST("/updateMarket", func(c *gin.Context) {
-		// db, cleanup := storage.OpenLocalDatabase(false)
-		// db, cleanup := storage.OpenDatabase()
-		// defer cleanup()
-
 		market.UpdateMarketData(db)
 
 		c.String(http.StatusOK, "Market data updated")
 	})
+
+	c := cron.New()
+	c.AddFunc("0 */12 * * *", func() {
+		log.Println("Running scheduled market data update...")
+		market.UpdateMarketData(db)
+		log.Println("Market data update completed")
+	})
+	c.Start()
 
 	r.Run()
 }
