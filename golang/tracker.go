@@ -7,17 +7,14 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 	"tracker/btui"
 	"tracker/market"
 	"tracker/storage"
-	"tracker/tui"
 	"tracker/web"
 )
 
 func main() {
-	tuiBackend := flag.String("tui", "tview", "TUI backend: 'tview' (classic) or 'bubble' (new bubbletea)")
 	flag.Parse()
 
 	args := flag.Args()
@@ -56,19 +53,11 @@ func main() {
 	db, cleanup := storage.OpenDatabase()
 	defer cleanup()
 
-	switch strings.ToLower(*tuiBackend) {
-	case "bubble", "bubbletea":
-		btui.StartApp(db)
-	case "tview", "classic":
-		tui.StartApp(db)
-	default:
-		fmt.Printf("Unknown TUI backend: %s (use 'tview' or 'bubble')\n", *tuiBackend)
-		os.Exit(1)
-	}
+	btui.StartApp(db)
 }
 
 func printHelp() {
-	fmt.Println("Usage: tracker [options] [command]")
+	fmt.Println("Usage: tracker [command]")
 	fmt.Println()
 	fmt.Println("Commands:")
 	fmt.Println("  help     Show this help")
@@ -77,15 +66,9 @@ func printHelp() {
 	fmt.Println("  backup   Backup database to home directory")
 	fmt.Println("  (none)   Start the portfolio tracker TUI")
 	fmt.Println()
-	fmt.Println("Options:")
-	fmt.Println("  -tui string")
-	fmt.Println("        TUI backend: 'tview' (classic) or 'bubble' (new bubbletea)")
-	fmt.Println("        Default: tview")
-	fmt.Println()
 	fmt.Println("Examples:")
-	fmt.Println("  tracker                  Start with classic tview TUI")
-	fmt.Println("  tracker -tui=bubble      Start with new bubbletea TUI")
-	fmt.Println("  tracker update           Update market data")
+	fmt.Println("  tracker          Start portfolio tracker TUI")
+	fmt.Println("  tracker update   Update market data")
 }
 
 func runBackup() error {
