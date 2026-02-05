@@ -11,3 +11,13 @@ Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
   - API key & model read from env vars with sensible defaults (gpt-5.2)
   - Structured error responses handle auth, rate limits, network failures gracefully
 ---
+
+## Feb 5 2026 - US-002
+Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
+- Created `llm/prompt.go` with financial analyst system prompt and context builder functions
+- Files changed: created `llm/prompt.go`
+- **Learnings for future iterations:**
+  - System prompt as constant, context builders as separate functions for reusability
+  - PortfolioData, TransactionData, MetricsData structs for type-safe portfolio context
+  - Structured text format (not JSON) for better LLM comprehension per requirements
+---

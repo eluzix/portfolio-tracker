@@ -20,6 +20,11 @@ Format your response as markdown with clear headers and sections.
 **IMPORTANT DISCLAIMER**: This analysis is for informational purposes only and should not be considered as financial advice. 
 Always consult with a qualified financial advisor before making investment decisions.`
 
+// EstimateTokens estimates the token count in a string (rough approximation: ~4 chars per token)
+func EstimateTokens(text string) int {
+	return len(text) / 4
+}
+
 // ContextBuilder builds a structured prompt context for portfolio analysis
 func ContextBuilder(accountName string, holdings []PortfolioData, transactions []TransactionData, metrics MetricsData) string {
 	context := ""
@@ -54,13 +59,41 @@ func ContextBuilder(accountName string, holdings []PortfolioData, transactions [
 	if len(transactions) > 0 {
 		context += "RECENT TRANSACTIONS:\n"
 		context += "-------------------\n"
-		for _, t := range transactions {
-			context += "- " + t.Date + ": " + t.Action + " " + t.Quantity + " shares of " + t.Symbol + " @ $" + t.Price + "\n"
-		}
-		context += "\n"
+		context += buildTransactionContext(transactions, 8000)
 	}
 
 	return context
+}
+
+// buildTransactionContext builds transaction section and truncates oldest transactions if needed to stay under token limit
+func buildTransactionContext(transactions []TransactionData, maxTokens int) string {
+	const maxTotalTokens = 8000
+	const systemPromptTokens = 500
+	
+	tokenBudget := maxTotalTokens - systemPromptTokens - maxTokens
+	if tokenBudget < 200 {
+		tokenBudget = 200
+	}
+
+	txnText := ""
+	currentTokens := 0
+
+	// Start from most recent (assume transactions are sorted newest first)
+	for i := 0; i < len(transactions); i++ {
+		t := transactions[i]
+		line := "- " + t.Date + ": " + t.Action + " " + t.Quantity + " shares of " + t.Symbol + " @ $" + t.Price + "\n"
+		lineTokens := EstimateTokens(line)
+
+		if currentTokens+lineTokens > tokenBudget {
+			txnText += "\n(Additional older transactions truncated to stay within token limit)\n"
+			break
+		}
+
+		txnText += line
+		currentTokens += lineTokens
+	}
+
+	return txnText + "\n"
 }
 
 // PortfolioData represents a single holding in the portfolio
