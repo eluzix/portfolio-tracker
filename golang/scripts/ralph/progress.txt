@@ -32,3 +32,13 @@ Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
   - Transactions truncated from oldest when exceeding token budget, with clear user message
   - ContextBuilder is account-agnostic, can be reused for portfolio aggregation in future
 ---
+
+## Feb 5 2026 - US-004
+Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
+- Added `Summarize` key binding (Ctrl+S) to `tui/keys.go` with help text "AI insights"
+- Integrated into FullHelp() in first row with general navigation
+- Files changed: modified `tui/keys.go`
+- **Learnings for future iterations:**
+  - KeyMap is shared by substructs (AccountsKeyMap, AccountDetailKeyMap)
+  - New key bindings should be added to FullHelp() for discovery
+---
