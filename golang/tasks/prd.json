@@ -1,0 +1,125 @@
+{
+  "project": "Portfolio Tracker",
+  "branchName": "ralph/llm-portfolio-insights",
+  "description": "LLM Portfolio Insights - AI-powered portfolio analysis using OpenAI API with zero new dependencies",
+  "userStories": [
+    {
+      "id": "US-001",
+      "title": "OpenAI API Client Implementation",
+      "description": "As a developer, I need a zero-dependency OpenAI client so the app can request completions without adding external libraries.",
+      "acceptanceCriteria": [
+        "Create `llm/openai.go` with HTTP client using `net/http`",
+        "Implement chat completions endpoint (`POST /v1/chat/completions`)",
+        "Read API key from `OPENAI_KEY` environment variable",
+        "Read model from `OPENAI_MODEL` env var, default to `gpt-5.2`",
+        "Handle streaming disabled (simple JSON response)",
+        "Return structured error on API failure (rate limit, auth, network)",
+        "Typecheck passes"
+      ],
+      "priority": 1,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-002",
+      "title": "System Prompt Engineering",
+      "description": "As a developer, I need a well-crafted system prompt so the LLM provides actionable financial insights.",
+      "acceptanceCriteria": [
+        "Create `llm/prompt.go` with system prompt constant",
+        "Instruct LLM to act as financial analyst",
+        "Request analysis of: diversification, sector allocation, risk exposure, performance vs benchmarks",
+        "Request actionable insights and potential concerns",
+        "Format output as markdown with headers",
+        "Include disclaimer about not being financial advice",
+        "Typecheck passes"
+      ],
+      "priority": 2,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-003",
+      "title": "Portfolio Context Builder",
+      "description": "As a developer, I need to build a structured prompt with portfolio data so the LLM has full context for analysis.",
+      "acceptanceCriteria": [
+        "Add context builder functions to `llm/prompt.go`",
+        "For single account: include account name, holdings, all transactions, performance metrics (gain, yield, dividends)",
+        "For full portfolio: aggregate all accounts with same data",
+        "Format data as structured text (not JSON) for better LLM comprehension",
+        "Include current date for temporal context",
+        "Keep prompt under 8000 tokens estimate (truncate oldest transactions if needed)",
+        "Typecheck passes"
+      ],
+      "priority": 3,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-004",
+      "title": "Add Summarize Keybinding",
+      "description": "As a user, I want to press Ctrl+S to trigger AI analysis of my portfolio or current account.",
+      "acceptanceCriteria": [
+        "Add `Summarize` key binding to `KeyMap` struct in `tui/keys.go`: `ctrl+s`",
+        "Add help text: 'Ctrl+S' -> 'AI insights'",
+        "Add to `FullHelp()` return under General section",
+        "Typecheck passes"
+      ],
+      "priority": 4,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-005",
+      "title": "Scrollable Insights Modal",
+      "description": "As a user, I want to view AI insights in a scrollable floating window so I can read long responses.",
+      "acceptanceCriteria": [
+        "Create `tui/views/insights.go` with `InsightsView` component",
+        "Floating modal centered on screen (80% width, 70% height)",
+        "Scrollable content area using charmbracelet/bubbles/viewport",
+        "Styled header showing 'Portfolio Insights' or 'Account: {name} Insights'",
+        "Footer showing scroll position and available actions (Esc to close, c to copy)",
+        "Arrow keys and j/k for scrolling, Esc to close",
+        "Typecheck passes"
+      ],
+      "priority": 5,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-006",
+      "title": "Copy to Clipboard",
+      "description": "As a user, I want to copy the AI insights to clipboard so I can save or share them.",
+      "acceptanceCriteria": [
+        "Add clipboard utility in `utils/clipboard.go`",
+        "Use shell fallback: `pbcopy` on macOS, `xclip -selection clipboard` on Linux",
+        "Export `CopyToClipboard(text string) error` function",
+        "Handle clipboard errors gracefully (return error, don't panic)",
+        "Typecheck passes"
+      ],
+      "priority": 6,
+      "passes": false,
+      "notes": ""
+    },
+    {
+      "id": "US-007",
+      "title": "Integrate Insights Modal into TUI",
+      "description": "As a developer, I need to wire the insights modal into the main TUI model and handle the async API flow.",
+      "acceptanceCriteria": [
+        "Add `ModalInsights` to `ModalType` enum in `tui/messages.go`",
+        "Add `InsightsLoadedMsg` and `InsightsErrorMsg` message types",
+        "Add `insightsView` field to `Model` struct in `tui/model.go`",
+        "On `Ctrl+S` in ViewAccounts: dispatch async API call for full portfolio",
+        "On `Ctrl+S` in ViewAccountDetail: dispatch async API call for selected account",
+        "Show loading state in status bar while API call runs",
+        "On success: populate and show insights modal",
+        "On error: show error message inside the modal",
+        "Add 'c' key handler in modal to copy content and show confirmation in status bar",
+        "Esc closes modal and returns to previous view",
+        "Typecheck passes"
+      ],
+      "priority": 7,
+      "passes": false,
+      "notes": ""
+    }
+  ]
+}
