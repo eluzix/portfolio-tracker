@@ -1,3 +1,13 @@
 # Ralph Progress Log
 Started: Thu Feb  5 14:17:39 IST 2026
 ---
+
+## Feb 5 2026 - US-001
+Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
+- Implemented OpenAI API client in `llm/openai.go` using only stdlib `net/http`
+- Files changed: created `llm/openai.go`
+- **Learnings for future iterations:**
+  - Zero-dependency approach: all HTTP, JSON, and error handling via stdlib
+  - API key & model read from env vars with sensible defaults (gpt-5.2)
+  - Structured error responses handle auth, rate limits, network failures gracefully
+---
