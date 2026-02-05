@@ -42,3 +42,15 @@ Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
   - KeyMap is shared by substructs (AccountsKeyMap, AccountDetailKeyMap)
   - New key bindings should be added to FullHelp() for discovery
 ---
+
+## Feb 5 2026 - US-005
+Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
+- Created `tui/views/insights.go` with scrollable insights modal using bubbles/viewport
+- Modal dimensions: 80% width, 70% height, centered on screen with dark overlay
+- Header shows title, footer shows scroll position and available actions
+- Files changed: created `tui/views/insights.go`
+- **Learnings for future iterations:**
+  - Modal pattern: use viewport for scrollable content, lipgloss for styling and centering
+  - Scroll position calculation: totalLines / yOffset for percentage display
+  - SetSize() accounts for borders and padding when calculating content area
+---
