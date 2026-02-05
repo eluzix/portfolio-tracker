@@ -21,3 +21,14 @@ Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
   - PortfolioData, TransactionData, MetricsData structs for type-safe portfolio context
   - Structured text format (not JSON) for better LLM comprehension per requirements
 ---
+
+## Feb 5 2026 - US-003
+Thread: https://ampcode.com/threads/T-019c2dbd-8cb6-7385-b47d-09b7deeb8c10
+- Enhanced `llm/prompt.go` with token estimation and transaction truncation logic
+- Implemented ContextBuilder for single account, with token budget tracking (~8000 tokens max)
+- Files changed: modified `llm/prompt.go`
+- **Learnings for future iterations:**
+  - Token estimation: ~4 chars per token (rough approximation)
+  - Transactions truncated from oldest when exceeding token budget, with clear user message
+  - ContextBuilder is account-agnostic, can be reused for portfolio aggregation in future
+---

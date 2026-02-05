@@ -18,6 +18,7 @@ type KeyMap struct {
 	CycleTag      key.Binding
 	Confirm       key.Binding
 	Cancel        key.Binding
+	Summarize     key.Binding
 }
 
 var Keys = KeyMap{
@@ -81,6 +82,10 @@ var Keys = KeyMap{
 		key.WithKeys("n", "esc"),
 		key.WithHelp("n/esc", "cancel"),
 	),
+	Summarize: key.NewBinding(
+		key.WithKeys("ctrl+s"),
+		key.WithHelp("Ctrl+S", "AI insights"),
+	),
 }
 
 func (k KeyMap) ShortHelp() []key.Binding {
@@ -89,7 +94,7 @@ func (k KeyMap) ShortHelp() []key.Binding {
 
 func (k KeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
-		{k.Up, k.Down, k.Enter, k.Back},
+		{k.Up, k.Down, k.Enter, k.Back, k.Summarize},
 		{k.CurrencyUSD, k.CurrencyNIS, k.CycleTag},
 		{k.NewTx, k.DeleteTx, k.ToggleDivs},
 		{k.Tab, k.Help, k.Quit},
