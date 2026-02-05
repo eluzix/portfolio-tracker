@@ -3,6 +3,8 @@ package views
 import (
 	"strings"
 
+	"tracker/llm"
+
 	"github.com/charmbracelet/bubbles/viewport"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -88,7 +90,8 @@ func (i *InsightsView) SetSize(width, height int) {
 
 	i.viewport.Width = contentWidth
 	i.viewport.Height = contentHeight
-	i.viewport.SetContent(i.content)
+	wrappedContent := llm.WrapText(i.content, contentWidth)
+	i.viewport.SetContent(wrappedContent)
 	i.ready = true
 }
 
@@ -108,7 +111,8 @@ func (i *InsightsView) ScrollDown() {
 func (i *InsightsView) SetContent(title, content string) {
 	i.title = title
 	i.content = content
-	i.viewport.SetContent(content)
+	wrappedContent := llm.WrapText(content, i.viewport.Width)
+	i.viewport.SetContent(wrappedContent)
 	i.viewport.YOffset = 0
 }
 

@@ -567,3 +567,121 @@ func collectUniqueTags(accounts *[]types.Account) []string {
 	}
 	return tags
 }
+
+func (m Model) getPortfolioInsights() tea.Cmd {
+	return func() tea.Msg {
+		client, err := llm.NewClient()
+		if err != nil {
+			return InsightsErrorMsg{
+				Title: "Portfolio Insights",
+				Error: err.Error(),
+			}
+		}
+
+		filteredIds := m.getFilteredAccountIds()
+
+		// Get transactions data from all filtered accounts
+		var transactions []llm.TransactionData
+		for _, id := range filteredIds {
+			accountData := m.accountsData[id]
+			for _, tx := range accountData.Transactions {
+				transactions = append(transactions, llm.TransactionData{
+					Date:     tx.Date.Format("2006-01-02"),
+					Action:   string(tx.Type),
+					Symbol:   tx.Symbol,
+					Quantity: fmt.Sprintf("%.2f", float64(tx.Quantity)),
+					Price:    fmt.Sprintf("%.2f", float64(tx.Pps)/100),
+				})
+			}
+		}
+
+		// Get metrics from the portfolio
+		portfolioData := m.allPortfolio
+		if m.tagFilter != "All" {
+			portfolioData, _ = portfolio.LoadAndAnalyzeAccounts(m.db, filteredIds)
+		}
+
+		metrics := llm.MetricsData{
+			Date:                   "",
+			TotalValue:            fmt.Sprintf("%.2f", float64(portfolioData.Value)/100),
+			CostBasis:             fmt.Sprintf("%.2f", float64(portfolioData.TotalInvested)/100),
+			UnrealizedGain:        fmt.Sprintf("%.2f", float64(portfolioData.GainValue)/100),
+			UnrealizedGainPercent: fmt.Sprintf("%.2f", float64(portfolioData.Gain)),
+			DividendsReceived:     fmt.Sprintf("%.2f", float64(portfolioData.TotalDividends)/100),
+			YieldOnCost:           fmt.Sprintf("%.2f", float64(portfolioData.AnnualizedYield)),
+		}
+
+		// Build prompt with empty holdings (would need more data structure)
+		var holdings []llm.PortfolioData
+		userInput := llm.ContextBuilder("Full Portfolio", holdings, transactions, metrics)
+
+		// Get response from Responses API
+		content, err := client.Generate(llm.SystemPrompt, userInput, 2000)
+		if err != nil {
+			return InsightsErrorMsg{
+				Title: "Portfolio Insights",
+				Error: err.Error(),
+			}
+		}
+
+		return InsightsLoadedMsg{
+			Title:   "Portfolio Insights",
+			Content: content,
+		}
+	}
+}
+
+func (m Model) getAccountInsights() tea.Cmd {
+	return func() tea.Msg {
+		client, err := llm.NewClient()
+		if err != nil {
+			return InsightsErrorMsg{
+				Title: "Account Insights",
+				Error: err.Error(),
+			}
+		}
+
+		accountData := m.accountsData[m.selectedAccount.Id]
+
+		// Get transactions data
+		var transactions []llm.TransactionData
+		for _, tx := range accountData.Transactions {
+			transactions = append(transactions, llm.TransactionData{
+				Date:     tx.Date.Format("2006-01-02"),
+				Action:   string(tx.Type),
+				Symbol:   tx.Symbol,
+				Quantity: fmt.Sprintf("%.2f", float64(tx.Quantity)),
+				Price:    fmt.Sprintf("%.2f", float64(tx.Pps)/100),
+			})
+		}
+
+		// Get metrics
+		metrics := llm.MetricsData{
+			Date:                   "",
+			TotalValue:            fmt.Sprintf("%.2f", float64(accountData.Value)/100),
+			CostBasis:             fmt.Sprintf("%.2f", float64(accountData.TotalInvested)/100),
+			UnrealizedGain:        fmt.Sprintf("%.2f", float64(accountData.GainValue)/100),
+			UnrealizedGainPercent: fmt.Sprintf("%.2f", float64(accountData.Gain)),
+			DividendsReceived:     fmt.Sprintf("%.2f", float64(accountData.TotalDividends)/100),
+			YieldOnCost:           fmt.Sprintf("%.2f", float64(accountData.AnnualizedYield)),
+		}
+
+		// Build prompt with empty holdings (would need more data structure)
+		var holdings []llm.PortfolioData
+		userInput := llm.ContextBuilder(m.selectedAccount.Name, holdings, transactions, metrics)
+
+		// Get response from Responses API
+		content, err := client.Generate(llm.SystemPrompt, userInput, 2000)
+		if err != nil {
+			return InsightsErrorMsg{
+				Title: fmt.Sprintf("Account: %s Insights", m.selectedAccount.Name),
+				Error: err.Error(),
+			}
+		}
+
+		return InsightsLoadedMsg{
+			Title:   fmt.Sprintf("Account: %s Insights", m.selectedAccount.Name),
+			Content: content,
+		}
+	}
+}

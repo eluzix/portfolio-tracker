@@ -1,0 +1,33 @@
+## Codebase Patterns
+
+- **Data units**: All monetary values in `types.AnalyzedPortfolio` are stored in cents (int32/int64), require division by 100 for display
+- **Async pattern**: Use `tea.Cmd` pattern for async operations that return messages (InsightsLoadedMsg, InsightsErrorMsg)
+- **LLM integration**: OpenAI client initialization can fail if OPENAI_KEY env var is missing - handle gracefully in modal
+- **Modal context**: All modal-related types (ModalType, messages) centralized in `tui/messages.go`
+- **Insights modal**: Uses `charmbracelet/bubbles/viewport` for scrollable content, styled with custom InsightsStyles
+
+---
+
+## [2026-02-05 14:30] - US-007
+Thread: https://ampcode.com/threads/T-019c2dc4-a363-76bd-8225-7eb771a1eb8d
+
+**What was implemented:**
+- Added `getPortfolioInsights()` and `getAccountInsights()` tea.Cmd methods to Model in `tui/model.go`
+- Integrated with existing modal infrastructure (messages, view rendering already complete from US-005)
+- Both methods build context from transactions and metrics, call OpenAI API, return InsightsLoadedMsg or InsightsErrorMsg
+- Portfolio insights includes filtered accounts based on tag filter
+- Account insights uses single selected account data
+
+**Files changed:**
+- `/tui/model.go` - Added llm import, implemented two async insight command methods
+- `/tasks/prd.json` - Updated US-007 passes to true
+
+**Learnings for future iterations:**
+- Data storage convention: All monetary values in types.AnalyzedPortfolio are in cents (int64), not dollars
+- Transaction.Quantity and Transaction.Pps are int32, not floats - convert with float64() before formatting
+- The AnalyzedPortfolio struct only has aggregate metrics (Value, TotalInvested, GainValue, Gain, AnnualizedYield, ModifiedDietzYield, TotalDividends) - no individual holdings breakdown
+- Transaction data is the primary source for portfolio composition analysis, not a separate holdings structure
+- Always check for portfolio filtering by tag when building context - use m.getFilteredAccountIds() for multi-account scenarios
+- Modal input handling (scroll, copy, close) was already implemented in tui/model.go updateModal() method
+
+---
