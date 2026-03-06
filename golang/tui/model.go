@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"tracker/config"
+	"tracker/llm"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -43,6 +44,7 @@ type Model struct {
 	statusBar         components.StatusBar
 	accountsView      views.AccountsView
 	accountDetailView views.AccountDetailView
+	insightsView      *views.InsightsView
 	transactionForm   forms.TransactionForm
 	confirmDialog     forms.ConfirmDialog
 	pendingDeleteTx   *types.Transaction
@@ -266,6 +268,22 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.statusBar.SetLoading(false)
 		m.statusBar.SetStatus("Currency: " + msg.Symbol)
 
+	case InsightsLoadedMsg:
+		iv := views.NewInsightsView(msg.Title, msg.Content)
+		iv.SetSize(m.width, m.height)
+		m.insightsView = &iv
+		m.modalType = ModalInsights
+		m.statusBar.SetLoading(false)
+		m.statusBar.SetStatus("")
+
+	case InsightsErrorMsg:
+		iv := views.NewInsightsView(msg.Title, "Error generating insights:\n\n"+msg.Error)
+		iv.SetSize(m.width, m.height)
+		m.insightsView = &iv
+		m.modalType = ModalInsights
+		m.statusBar.SetLoading(false)
+		m.statusBar.SetStatus("")
+
 	case TransactionAddedMsg:
 		m.statusBar.SetStatus("Transaction added")
 		return m, m.reloadAccountData()
@@ -298,6 +316,9 @@ func (m Model) updateModal(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if m.modalType == ModalDeleteConfirm || m.modalType == ModalAbandonConfirm {
 			m.confirmDialog.SetSize(msg.Width, msg.Height)
 		}
+		if m.modalType == ModalInsights && m.insightsView != nil {
+			m.insightsView.SetSize(msg.Width, msg.Height)
+		}
 		return m, nil
 
 	case tea.KeyMsg:
@@ -305,6 +326,30 @@ func (m Model) updateModal(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if m.modalType == ModalAddTransaction {
 				m.modalType = ModalNone
 				m.statusBar.SetStatus("Cancelled")
+				return m, nil
+			}
+			if m.modalType == ModalInsights {
+				m.modalType = ModalNone
+				m.insightsView = nil
+				return m, nil
+			}
+		}
+
+		if m.modalType == ModalInsights {
+			switch {
+			case key.Matches(msg, Keys.Back):
+				m.modalType = ModalNone
+				m.insightsView = nil
+				return m, nil
+			case key.Matches(msg, Keys.Up):
+				if m.insightsView != nil {
+					m.insightsView.ScrollUp()
+				}
+				return m, nil
+			case key.Matches(msg, Keys.Down):
+				if m.insightsView != nil {
+					m.insightsView.ScrollDown()
+				}
 				return m, nil
 			}
 		}
@@ -359,6 +404,9 @@ func (m Model) updateModal(msg tea.Msg) (tea.Model, tea.Cmd) {
 			}
 		}
 		return m, cmd
+
+	case ModalInsights:
+		return m, nil
 	}
 
 	return m, nil
@@ -399,6 +447,11 @@ func (m Model) updateAccountsView(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.allPortfolio = allPortfolio
 		m.accountsView.SetAllPortfolio(allPortfolio)
 		return m, nil
+
+	case key.Matches(msg, Keys.Summarize):
+		m.statusBar.SetLoading(true)
+		m.statusBar.SetStatus("Generating portfolio insights...")
+		return m, m.getPortfolioInsights()
 
 	default:
 		m.accountsView, cmd = m.accountsView.Update(msg)
@@ -459,6 +512,11 @@ func (m Model) updateAccountDetailView(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		cmd = m.loadExchangeRate("NIS")
 		return m, cmd
 
+	case key.Matches(msg, Keys.Summarize):
+		m.statusBar.SetLoading(true)
+		m.statusBar.SetStatus("Generating account insights...")
+		return m, m.getAccountInsights()
+
 	default:
 		m.accountDetailView, cmd = m.accountDetailView.Update(msg)
 		return m, cmd
@@ -517,8 +575,22 @@ func (m Model) viewModal() string {
 		return m.transactionForm.View()
 	case ModalDeleteConfirm, ModalAbandonConfirm:
 		return m.confirmDialog.View()
+	case ModalInsights:
+		return m.viewInsightsModal()
 	}
 	return ""
+}
+
+func (m Model) viewInsightsModal() string {
+	if m.insightsView == nil {
+		return ""
+	}
+
+	return lipgloss.Place(m.width, m.height,
+		lipgloss.Center, lipgloss.Center,
+		m.insightsView.View(),
+		lipgloss.WithWhitespaceBackground(lipgloss.Color("#1a1a2e")),
+	)
 }
 
 func (m Model) viewLoading() string {
@@ -605,7 +677,7 @@ func (m Model) getPortfolioInsights() tea.Cmd {
 		}
 
 		metrics := llm.MetricsData{
-			Date:                   "",
+			Date:                  "",
 			TotalValue:            fmt.Sprintf("%.2f", float64(portfolioData.Value)/100),
 			CostBasis:             fmt.Sprintf("%.2f", float64(portfolioData.TotalInvested)/100),
 			UnrealizedGain:        fmt.Sprintf("%.2f", float64(portfolioData.GainValue)/100),
@@ -660,7 +732,7 @@ func (m Model) getAccountInsights() tea.Cmd {
 
 		// Get metrics
 		metrics := llm.MetricsData{
-			Date:                   "",
+			Date:                  "",
 			TotalValue:            fmt.Sprintf("%.2f", float64(accountData.Value)/100),
 			CostBasis:             fmt.Sprintf("%.2f", float64(accountData.TotalInvested)/100),
 			UnrealizedGain:        fmt.Sprintf("%.2f", float64(accountData.GainValue)/100),

@@ -51,6 +51,7 @@ const (
 	ModalAddTransaction
 	ModalDeleteConfirm
 	ModalAbandonConfirm
+	ModalInsights
 )
 
 type ErrorMsg struct {
@@ -66,3 +67,13 @@ type StatusMsg struct {
 }
 
 type ClearStatusMsg struct{}
+
+type InsightsLoadedMsg struct {
+	Title   string
+	Content string
+}
+
+type InsightsErrorMsg struct {
+	Title string
+	Error string
+}

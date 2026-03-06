@@ -3,22 +3,22 @@ package tui
 import "github.com/charmbracelet/bubbles/key"
 
 type KeyMap struct {
-	Up            key.Binding
-	Down          key.Binding
-	Enter         key.Binding
-	Back          key.Binding
-	Quit          key.Binding
-	Help          key.Binding
-	Tab           key.Binding
-	NewTx         key.Binding
-	DeleteTx      key.Binding
-	ToggleDivs    key.Binding
-	CurrencyUSD   key.Binding
-	CurrencyNIS   key.Binding
-	CycleTag      key.Binding
-	Confirm       key.Binding
-	Cancel        key.Binding
-	Summarize     key.Binding
+	Up          key.Binding
+	Down        key.Binding
+	Enter       key.Binding
+	Back        key.Binding
+	Quit        key.Binding
+	Help        key.Binding
+	Tab         key.Binding
+	NewTx       key.Binding
+	DeleteTx    key.Binding
+	ToggleDivs  key.Binding
+	CurrencyUSD key.Binding
+	CurrencyNIS key.Binding
+	CycleTag    key.Binding
+	Confirm     key.Binding
+	Cancel      key.Binding
+	Summarize   key.Binding
 }
 
 var Keys = KeyMap{
@@ -106,14 +106,14 @@ type AccountsKeyMap struct {
 }
 
 func (k AccountsKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Up, k.Down, k.Enter, k.CycleTag, k.Help, k.Quit}
+	return []key.Binding{k.Up, k.Down, k.Enter, k.CycleTag, k.Summarize, k.Help, k.Quit}
 }
 
 func (k AccountsKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Enter},
 		{k.CurrencyUSD, k.CurrencyNIS, k.CycleTag},
-		{k.Help, k.Quit},
+		{k.Summarize, k.Help, k.Quit},
 	}
 }
 
@@ -122,14 +122,14 @@ type AccountDetailKeyMap struct {
 }
 
 func (k AccountDetailKeyMap) ShortHelp() []key.Binding {
-	return []key.Binding{k.Up, k.Down, k.NewTx, k.DeleteTx, k.Back, k.Help}
+	return []key.Binding{k.Up, k.Down, k.NewTx, k.DeleteTx, k.Summarize, k.Back, k.Help}
 }
 
 func (k AccountDetailKeyMap) FullHelp() [][]key.Binding {
 	return [][]key.Binding{
 		{k.Up, k.Down, k.Enter},
 		{k.NewTx, k.DeleteTx, k.ToggleDivs},
-		{k.Back, k.Help, k.Quit},
+		{k.Summarize, k.Back, k.Help, k.Quit},
 	}
 }
 
