@@ -4,12 +4,13 @@ import (
 	"database/sql"
 	"fmt"
 
-	"tracker/tui/components"
-	"tracker/tui/forms"
-	"tracker/tui/views"
+	"tracker/config"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
+	"tracker/tui/components"
+	"tracker/tui/forms"
+	"tracker/tui/views"
 	"tracker/types"
 	"tracker/utils"
 
@@ -29,38 +30,39 @@ const (
 )
 
 type Model struct {
-	db                  *sql.DB
-	width               int
-	height              int
-	view                View
-	loading             bool
-	showHelp            bool
-	modalType           ModalType
-	spinner             spinner.Model
-	help                help.Model
-	header              components.Header
-	statusBar           components.StatusBar
-	accountsView        views.AccountsView
-	accountDetailView   views.AccountDetailView
-	transactionForm     forms.TransactionForm
-	confirmDialog       forms.ConfirmDialog
-	pendingDeleteTx     *types.Transaction
-	styles              Styles
-	accounts            *[]types.Account
-	accountsData        map[string]types.AnalyzedPortfolio
-	allPortfolio        types.AnalyzedPortfolio
-	selectedAccount     types.Account
-	currencySymbol      string
-	exchangeRate        float64
-	tagFilter           string
-	tags                []string
-	tagIndex            int
-	showDividends       bool
-	statusText          string
-	err                 error
+	db                *sql.DB
+	width             int
+	height            int
+	view              View
+	loading           bool
+	showHelp          bool
+	modalType         ModalType
+	spinner           spinner.Model
+	help              help.Model
+	header            components.Header
+	statusBar         components.StatusBar
+	accountsView      views.AccountsView
+	accountDetailView views.AccountDetailView
+	transactionForm   forms.TransactionForm
+	confirmDialog     forms.ConfirmDialog
+	pendingDeleteTx   *types.Transaction
+	styles            Styles
+	accounts          *[]types.Account
+	accountsData      map[string]types.AnalyzedPortfolio
+	allPortfolio      types.AnalyzedPortfolio
+	selectedAccount   types.Account
+	currencySymbol    string
+	exchangeRate      float64
+	tagFilter         string
+	tags              []string
+	tagIndex          int
+	showDividends     bool
+	dividendTaxRate   float64
+	statusText        string
+	err               error
 }
 
-func NewModel(db *sql.DB) Model {
+func NewModel(db *sql.DB, cfg config.AppConfig) Model {
 	s := spinner.New()
 	s.Spinner = spinner.Dot
 	s.Style = lipgloss.NewStyle().Foreground(lipgloss.Color("#ff9e64"))
@@ -80,20 +82,21 @@ func NewModel(db *sql.DB) Model {
 	statusBar.SetLoading(true)
 
 	return Model{
-		db:             db,
-		view:           ViewLoading,
-		loading:        true,
-		spinner:        s,
-		help:           h,
-		header:         header,
-		statusBar:      statusBar,
-		styles:         AppStyles,
-		currencySymbol: market.CurrencySymbolUSD,
-		exchangeRate:   1.0,
-		tagFilter:      "All",
-		tags:           []string{"All"},
-		showDividends:  true,
-		modalType:      ModalNone,
+		db:              db,
+		view:            ViewLoading,
+		loading:         true,
+		spinner:         s,
+		help:            h,
+		header:          header,
+		statusBar:       statusBar,
+		styles:          AppStyles,
+		currencySymbol:  market.CurrencySymbolUSD,
+		exchangeRate:    1.0,
+		tagFilter:       "All",
+		tags:            []string{"All"},
+		showDividends:   true,
+		dividendTaxRate: cfg.DividendTaxRate,
+		modalType:       ModalNone,
 	}
 }
 
@@ -242,7 +245,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.accountsView.SetCurrency(m.currencySymbol, m.exchangeRate)
 
 		if m.selectedAccount.Id != "" {
-			m.accountDetailView = views.NewAccountDetailView(m.selectedAccount, m.accountsData[m.selectedAccount.Id])
+			m.accountDetailView = views.NewAccountDetailView(m.selectedAccount, m.accountsData[m.selectedAccount.Id], m.dividendTaxRate)
 			m.accountDetailView.SetSize(m.width, m.height-4)
 			m.accountDetailView.SetCurrency(m.currencySymbol, m.exchangeRate)
 		}
@@ -369,7 +372,7 @@ func (m Model) updateAccountsView(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		if account := m.accountsView.SelectedAccount(); account != nil {
 			m.selectedAccount = *account
 			m.view = ViewAccountDetail
-			m.accountDetailView = views.NewAccountDetailView(*account, m.accountsData[account.Id])
+			m.accountDetailView = views.NewAccountDetailView(*account, m.accountsData[account.Id], m.dividendTaxRate)
 			m.accountDetailView.SetSize(m.width, m.height-4)
 			m.accountDetailView.SetCurrency(m.currencySymbol, m.exchangeRate)
 			m.header.SetSubtitle(account.Name)

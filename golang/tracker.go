@@ -8,14 +8,16 @@ import (
 	"os"
 	"path/filepath"
 	"time"
-	"tracker/tui"
+	"tracker/config"
 	"tracker/market"
 	"tracker/storage"
+	"tracker/tui"
 	"tracker/web"
 )
 
 func main() {
 	flag.Parse()
+	cfg := config.Load()
 
 	args := flag.Args()
 
@@ -25,13 +27,13 @@ func main() {
 			printHelp()
 			return
 		case "update":
-			db, cleanup := storage.OpenDatabase()
+			db, cleanup := storage.OpenDatabase(false)
 			defer cleanup()
 			market.UpdateMarketData(db)
 			fmt.Println("Market data updated successfully")
 			return
 		case "server":
-			web.StartServer()
+			web.StartServer(cfg)
 			return
 		case "backup":
 			if err := runBackup(); err != nil {
@@ -50,10 +52,10 @@ func main() {
 		return
 	}
 
-	db, cleanup := storage.OpenDatabase()
+	db, cleanup := storage.OpenDatabase(true)
 	defer cleanup()
 
-	tui.StartApp(db)
+	tui.StartApp(db, cfg)
 }
 
 func printHelp() {
@@ -74,7 +76,7 @@ func printHelp() {
 func runBackup() error {
 	fmt.Println("=== Starting Database Backup ===")
 
-	db, cleanup := storage.OpenDatabase()
+	db, cleanup := storage.OpenDatabase(false)
 	defer cleanup()
 
 	homeDir, err := os.UserHomeDir()

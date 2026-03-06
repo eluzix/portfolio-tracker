@@ -2,9 +2,12 @@ package views
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 
+	"tracker/config"
+	"tracker/portfolio"
 	"tracker/types"
 	"tracker/utils"
 
@@ -14,17 +17,18 @@ import (
 )
 
 type AccountDetailView struct {
-	table          table.Model
-	account        types.Account
-	portfolio      types.AnalyzedPortfolio
-	transactions   []types.Transaction
-	width          int
-	height         int
-	currencySymbol string
-	exchangeRate   float64
-	showDividends  bool
-	styles         AccountDetailStyles
-	focused        bool
+	table           table.Model
+	account         types.Account
+	portfolio       types.AnalyzedPortfolio
+	transactions    []types.Transaction
+	width           int
+	height          int
+	currencySymbol  string
+	exchangeRate    float64
+	dividendTaxRate float64
+	showDividends   bool
+	styles          AccountDetailStyles
+	focused         bool
 }
 
 type AccountDetailStyles struct {
@@ -74,16 +78,17 @@ func DefaultAccountDetailStyles() AccountDetailStyles {
 	}
 }
 
-func NewAccountDetailView(account types.Account, portfolio types.AnalyzedPortfolio) AccountDetailView {
+func NewAccountDetailView(account types.Account, portfolio types.AnalyzedPortfolio, dividendTaxRate float64) AccountDetailView {
 	v := AccountDetailView{
-		account:        account,
-		portfolio:      portfolio,
-		transactions:   portfolio.Transactions,
-		currencySymbol: "$",
-		exchangeRate:   1.0,
-		showDividends:  true,
-		styles:         DefaultAccountDetailStyles(),
-		focused:        true,
+		account:         account,
+		portfolio:       portfolio,
+		transactions:    portfolio.Transactions,
+		currencySymbol:  "$",
+		exchangeRate:    1.0,
+		dividendTaxRate: dividendTaxRate,
+		showDividends:   true,
+		styles:          DefaultAccountDetailStyles(),
+		focused:         true,
 	}
 	return v
 }
@@ -113,9 +118,9 @@ func (v *AccountDetailView) SelectedTransaction() *types.Transaction {
 	}
 
 	cursor := v.table.Cursor()
-	displayed := v.getDisplayedTransactions()
+	displayed := v.getDisplayedTransactionRows()
 	if cursor >= 0 && cursor < len(displayed) {
-		return &displayed[cursor]
+		return &displayed[cursor].Transaction
 	}
 	return nil
 }
@@ -185,42 +190,26 @@ func (v *AccountDetailView) buildColumns() []table.Column {
 }
 
 func (v *AccountDetailView) buildRows() []table.Row {
-	displayed := v.getDisplayedTransactions()
+	displayed := v.getDisplayedTransactionRows()
 	var rows []table.Row
 
-	for _, tx := range displayed {
-		total := int64(tx.Quantity) * int64(tx.Pps)
+	for _, row := range displayed {
+		tx := row.Transaction
 		rows = append(rows, table.Row{
 			tx.Date.Format("2006-01-02"),
 			string(tx.Type),
 			tx.Symbol,
-			fmt.Sprintf("%d", tx.Quantity),
+			fmt.Sprintf("%d", row.Quantity),
 			utils.ToCurrencyString(int64(tx.Pps), 2, v.currencySymbol, v.exchangeRate),
-			utils.ToCurrencyString(total, 2, v.currencySymbol, v.exchangeRate),
+			utils.ToCurrencyString(row.Total, 2, v.currencySymbol, v.exchangeRate),
 		})
 	}
 
 	return rows
 }
 
-func (v *AccountDetailView) getDisplayedTransactions() []types.Transaction {
-	sorted := make([]types.Transaction, len(v.transactions))
-	copy(sorted, v.transactions)
-	sort.Slice(sorted, func(i, j int) bool {
-		return sorted[i].Date.After(sorted[j].Date)
-	})
-
-	if v.showDividends {
-		return sorted
-	}
-
-	var filtered []types.Transaction
-	for _, tx := range sorted {
-		if tx.Type != types.TransactionTypeDividend && tx.Type != types.TransactionTypeSplit {
-			filtered = append(filtered, tx)
-		}
-	}
-	return filtered
+func (v *AccountDetailView) getDisplayedTransactionRows() []portfolio.TransactionRow {
+	return portfolio.BuildTransactionRows(v.transactions, v.showDividends)
 }
 
 func (v AccountDetailView) View() string {
@@ -246,6 +235,8 @@ func (v AccountDetailView) renderHeader() string {
 
 func (v AccountDetailView) renderInfo() string {
 	multiplier := v.exchangeRate
+	dividendsAfterTax := config.DividendsAfterTax(v.portfolio.TotalDividends, v.dividendTaxRate)
+	taxPercent := math.Round(v.dividendTaxRate*1000) / 10
 
 	currencyDisplay := v.currencySymbol
 	if v.currencySymbol == "₪" && v.exchangeRate != 1.0 {
@@ -268,6 +259,10 @@ func (v AccountDetailView) renderInfo() string {
 		lipgloss.JoinHorizontal(lipgloss.Left,
 			v.styles.InfoLabel.Render("Dividends: "),
 			v.styles.InfoValue.Render(utils.ToCurrencyString(v.portfolio.TotalDividends, 0, v.currencySymbol, multiplier)),
+		),
+		lipgloss.JoinHorizontal(lipgloss.Left,
+			v.styles.InfoLabel.Render(fmt.Sprintf("Dividends (After %.1f%% Tax): ", taxPercent)),
+			v.styles.InfoValue.Render(utils.ToCurrencyString(dividendsAfterTax, 0, v.currencySymbol, multiplier)),
 		),
 	)
 

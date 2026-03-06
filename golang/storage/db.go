@@ -9,6 +9,34 @@ import (
 	"github.com/tursodatabase/go-libsql"
 )
 
+func configDataDir() string {
+	cfgDir, err := os.UserConfigDir()
+	if err != nil {
+		panic(fmt.Sprintf("Unable to location config dir: %s", err))
+	}
+
+	dir := filepath.Join(cfgDir, "tracker", "data")
+	if err := os.MkdirAll(dir, os.ModePerm); err != nil {
+		panic(fmt.Sprintf("Error creating config directory %s: %s", dir, err))
+	}
+
+	return dir
+}
+
+func tmpDataDir() string {
+	dir, err := os.MkdirTemp("", "libsql-*")
+	if err != nil {
+		panic(fmt.Sprintf("Error creating temporary directory: %s\n", err))
+	}
+
+	err = os.Chmod(dir, 0744)
+	if err != nil {
+		panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
+	}
+
+	return dir
+}
+
 func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
 	dbName := "tracker.db"
 	var err error
@@ -26,12 +54,7 @@ func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
 			panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
 		}
 	} else {
-		cfgDir, err := os.UserConfigDir()
-		if err != nil {
-			panic(fmt.Sprintf("Unable to location config dir: %s", err))
-		}
-		dir = fmt.Sprintf("%s/tracker/data/", cfgDir)
-		_ = os.Mkdir(dir, os.ModePerm)
+		dir = configDataDir()
 	}
 
 	dbPath := filepath.Join(dir, dbName)
@@ -62,7 +85,7 @@ func OpenLocalDatabase(tmp bool) (*sql.DB, func()) {
 	return db, cleanup
 }
 
-func OpenDatabase() (*sql.DB, func()) {
+func OpenDatabase(tmp bool) (*sql.DB, func()) {
 	dbName := "tracker.db"
 	primaryUrl := os.Getenv("TRACKER_DATABASE_URL")
 	authToken := os.Getenv("TRACKER_AUTH_TOKEN")
@@ -73,17 +96,10 @@ func OpenDatabase() (*sql.DB, func()) {
 		panic("Missing env vars: TRACKER_DATABASE_URL and TRACKER_AUTH_TOKEN")
 	}
 
-	// todo move from tmp directory to wellknown location so it will not be deleted
-	dir, err := os.MkdirTemp("", "libsql-*")
-	if err != nil {
-		panic(fmt.Sprintf("Error creating temporary directory: %s\n", err))
+	dir := configDataDir()
+	if tmp {
+		dir = tmpDataDir()
 	}
-	// defer os.RemoveAll(dir)
-	err = os.Chmod(dir, 0744)
-	if err != nil {
-		panic(fmt.Sprintf("Error setting tmpdir permissions %s : %s\n", dir, err))
-	}
-
 	dbPath := filepath.Join(dir, dbName)
 
 	connector, err := libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
@@ -103,7 +119,9 @@ func OpenDatabase() (*sql.DB, func()) {
 	cleanup := func() {
 		connector.Close()
 		db.Close()
-		os.RemoveAll(dir)
+		if tmp {
+			os.RemoveAll(dir)
+		}
 	}
 
 	rows, err := db.Query("PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL;")

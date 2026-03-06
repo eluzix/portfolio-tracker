@@ -64,6 +64,10 @@
                     <div class="stat-value">{{toCurrencyWithRate .portfolio.TotalDividends 0 .currencySymbol .exchangeRate}}</div>
                 </div>
                 <div class="stat-item">
+                    <div class="stat-label">Dividends (After {{printf "%.1f" .dividendTaxPercent}}% Tax)</div>
+                    <div class="stat-value">{{toCurrencyWithRate .dividendsAfterTax 0 .currencySymbol .exchangeRate}}</div>
+                </div>
+                <div class="stat-item">
                     <div class="stat-label">Gain</div>
                     <div class="stat-value">{{toYield .portfolio.Gain}}</div>
                 </div>
@@ -143,12 +147,12 @@
             {{$rate := .exchangeRate}}
             {{range .transactions}}
             <tr>
-                <td>{{formatDate .Date}}</td>
-                <td>{{.Type}}</td>
-                <td>{{.Symbol}}</td>
+                <td>{{formatDate .Transaction.Date}}</td>
+                <td>{{.Transaction.Type}}</td>
+                <td>{{.Transaction.Symbol}}</td>
                 <td style="text-align: right;">{{.Quantity}}</td>
-                <td style="text-align: right;">{{toCurrencyWithRate (int64 .Pps) 2 $symbol $rate}}</td>
-                <td style="text-align: right;">{{toCurrencyWithRate (mul64 .Quantity .Pps) 2 $symbol $rate}}</td>
+                <td style="text-align: right;">{{toCurrencyWithRate (int64 .Transaction.Pps) 2 $symbol $rate}}</td>
+                <td style="text-align: right;">{{toCurrencyWithRate .Total 2 $symbol $rate}}</td>
             </tr>
             {{end}}
             </tbody>

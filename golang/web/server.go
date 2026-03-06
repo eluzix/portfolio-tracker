@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"os"
 	"slices"
-	"sort"
 	"time"
+	"tracker/config"
 	"tracker/loaders"
 	"tracker/market"
 	"tracker/portfolio"
@@ -58,13 +58,14 @@ func getFilteredAccountIds(accounts *[]types.Account, tagFilter string) []string
 	return ids
 }
 
-func StartServer() {
+func StartServer(cfg config.AppConfig) {
 	user := os.Getenv("TRACKER_USER")
 	pass := os.Getenv("TRACKER_PASSWORD")
 	if user == "" || pass == "" {
 		log.Fatal("TRACKER_USER and TRACKER_PASSWORD environment variables must be set")
 	}
 
+	gin.SetMode(gin.ReleaseMode)
 	r := gin.Default()
 
 	r.Use(gin.BasicAuth(gin.Accounts{
@@ -81,9 +82,6 @@ func StartServer() {
 		"int64": func(i int32) int64 {
 			return int64(i)
 		},
-		"mul64": func(a, b int32) int64 {
-			return int64(a) * int64(b)
-		},
 	}
 	templ := template.Must(template.New("").Funcs(funcMap).ParseFS(f, "templates/*.html"))
 	r.SetHTMLTemplate(templ)
@@ -92,7 +90,7 @@ func StartServer() {
 		c.FileFromFS("static"+c.Param("filepath"), http.FS(f))
 	})
 
-	db, cleanup := storage.OpenDatabase()
+	db, cleanup := storage.OpenDatabase(false)
 	defer cleanup()
 
 	r.GET("/", func(c *gin.Context) {
@@ -168,31 +166,20 @@ func StartServer() {
 		}
 
 		portfolioData, _ := portfolio.LoadAndAnalyze(db, account)
-
-		transactions := make([]types.Transaction, len(portfolioData.Transactions))
-		copy(transactions, portfolioData.Transactions)
-		sort.Slice(transactions, func(i, j int) bool {
-			return transactions[i].Date.After(transactions[j].Date)
-		})
-
-		if !showDividends {
-			var filtered []types.Transaction
-			for _, tx := range transactions {
-				if tx.Type != types.TransactionTypeDividend && tx.Type != types.TransactionTypeSplit {
-					filtered = append(filtered, tx)
-				}
-			}
-			transactions = filtered
-		}
+		transactions := portfolio.BuildTransactionRows(portfolioData.Transactions, showDividends)
+		dividendsAfterTax := config.DividendsAfterTax(portfolioData.TotalDividends, cfg.DividendTaxRate)
 
 		c.HTML(http.StatusOK, "account.html", gin.H{
-			"account":        account,
-			"portfolio":      portfolioData,
-			"transactions":   transactions,
-			"currency":       currency,
-			"currencySymbol": currencySymbol,
-			"exchangeRate":   exchangeRate,
-			"showDividends":  showDividends,
+			"account":            account,
+			"portfolio":          portfolioData,
+			"transactions":       transactions,
+			"currency":           currency,
+			"currencySymbol":     currencySymbol,
+			"exchangeRate":       exchangeRate,
+			"dividendTaxRate":    cfg.DividendTaxRate,
+			"dividendTaxPercent": cfg.DividendTaxRate * 100,
+			"dividendsAfterTax":  dividendsAfterTax,
+			"showDividends":      showDividends,
 		})
 	})
 

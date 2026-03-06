@@ -20,7 +20,7 @@ func main() {
 func runBackup() error {
 	fmt.Println("=== Starting Database Backup ===")
 
-	db, cleanup := storage.OpenDatabase()
+	db, cleanup := storage.OpenDatabase(false)
 	defer cleanup()
 
 	homeDir, err := os.UserHomeDir()
