@@ -5,9 +5,22 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/tursodatabase/go-libsql"
 )
+
+func removeReplicaWalFiles(dbPath string) {
+	_ = os.Remove(dbPath + "-wal")
+	_ = os.Remove(dbPath + "-shm")
+}
+
+func isWalInsertFrameError(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(strings.ToLower(err.Error()), "wal_insert_frame failed")
+}
 
 func configDataDir() string {
 	cfgDir, err := os.UserConfigDir()
@@ -106,6 +119,13 @@ func OpenDatabase(tmp bool) (*sql.DB, func()) {
 		libsql.WithAuthToken(authToken),
 		libsql.WithReadYourWrites(true),
 	)
+	if err != nil && isWalInsertFrameError(err) {
+		removeReplicaWalFiles(dbPath)
+		connector, err = libsql.NewEmbeddedReplicaConnector(dbPath, primaryUrl,
+			libsql.WithAuthToken(authToken),
+			libsql.WithReadYourWrites(true),
+		)
+	}
 	if err != nil {
 		// fmt.Println("Error creating connector:", err)
 		panic(fmt.Sprintf("Error creating connector: %s\n", err))
