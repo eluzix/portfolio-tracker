@@ -91,6 +91,8 @@ func StartServer(cfg config.AppConfig) {
 	})
 
 	db, cleanup := storage.OpenDatabase(false)
+	db.SetMaxOpenConns(1)
+	db.SetMaxIdleConns(1)
 	defer cleanup()
 
 	r.GET("/", func(c *gin.Context) {

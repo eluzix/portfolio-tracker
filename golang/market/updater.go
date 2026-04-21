@@ -98,6 +98,7 @@ func UpdateMarketDataWithFetcher(db *sql.DB, fetcher DateFetcher) {
 		}
 		if err := batchUpsertPrices(ctx, tx, priceList, now); err != nil {
 			logger.Error("error batch upserting prices", slog.Any("error", err))
+			return
 		}
 		logger.Info("Finished upserting prices")
 	}
@@ -128,11 +129,13 @@ func UpdateMarketDataWithFetcher(db *sql.DB, fetcher DateFetcher) {
 		logger.Info("Deleting old dividends/splits", slog.Int("symbols", len(symbols)))
 		if err := batchDeleteDividendsSplits(ctx, tx, symbols); err != nil {
 			logger.Error("error batch deleting dividends/splits", slog.Any("error", err))
+			return
 		}
 
 		logger.Info("Inserting dividends/splits", slog.Int("count", len(allTransactions)))
 		if err := batchInsertDividendsSplits(ctx, tx, allTransactions); err != nil {
 			logger.Error("error batch inserting dividends/splits", slog.Any("error", err))
+			return
 		}
 		logger.Info("Finished processing dividends/splits")
 	}
@@ -154,6 +157,7 @@ func UpdateMarketDataWithFetcher(db *sql.DB, fetcher DateFetcher) {
 		logger.Info("Upserting rates", slog.Int("count", len(rateList)))
 		if err := batchUpsertRates(ctx, tx, rateList, now); err != nil {
 			logger.Error("error batch upserting rates", slog.Any("error", err))
+			return
 		}
 		logger.Info("Finished upserting rates")
 	}
@@ -206,7 +210,10 @@ type rateEntry struct {
 	Value  float64
 }
 
-func batchUpsertRates(ctx context.Context, tx *sql.Tx, rates []struct{ Symbol string; Value float64 }, now time.Time) error {
+func batchUpsertRates(ctx context.Context, tx *sql.Tx, rates []struct {
+	Symbol string
+	Value  float64
+}, now time.Time) error {
 	if len(rates) == 0 {
 		return nil
 	}
